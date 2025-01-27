@@ -1,0 +1,17 @@
+---
+manufacturer: Panduit
+model: Quicknet Rack Mount Fiber Enclosure, 2 RU
+part_number: FCE2
+u_height: 2
+is_full_depth: false
+subdevice_role: parent
+is_powered: false
+device-bays:
+  - name: A
+  - name: B
+  - name: C
+  - name: D
+  - name: E
+  - name: F
+  - name: G
+  - name: H
