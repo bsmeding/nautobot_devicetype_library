@@ -17,17 +17,17 @@ jobs:
 
     steps:
         - name: Checkout your forked repository
-            uses: actions/checkout@v4
-            with:
-            fetch-depth: 0
+          uses: actions/checkout@v4
+          with:
+          fetch-depth: 0
 
         - name: Add upstream repository
-            run: |
+          run: |
             git remote add upstream https://github.com/nautobot/devicetype-library
             git fetch upstream main
 
         - name: Sync configs and data folders from upstream
-            run: |
+          run: |
             # Create a temporary folder to hold the upstream files
             mkdir -p temp_sync
 
@@ -54,7 +54,7 @@ jobs:
             mv temp_sync/module-types ./module-types
 
         - name: Commit changes if any
-            run: |
+          run: |
             git config --global user.name "github-actions"
             git config --global user.email "github-actions@github.com"
             git add configs data
