@@ -1,0 +1,66 @@
+########################################
+#
+#  Sync with the upstream Nautobot device_type repository to get latest changes 
+#
+########################################
+
+name: Sync Upstream Subfolder
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+        - name: Checkout your forked repository
+            uses: actions/checkout@v4
+            with:
+            fetch-depth: 0
+
+        - name: Add upstream repository
+            run: |
+            git remote add upstream https://github.com/nautobot/devicetype-library
+            git fetch upstream main
+
+        - name: Sync configs and data folders from upstream
+            run: |
+            # Create a temporary folder to hold the upstream files
+            mkdir -p temp_sync
+
+            # Sync the device-types folder
+            git checkout upstream/master -- device-types
+            rsync -av --delete device-types temp_sync/
+            
+            # Sync the elevation-images folder
+            git checkout upstream/master -- elevation-images
+            rsync -av --delete elevation-images temp_sync/
+
+            # Sync the module-images folder
+            git checkout upstream/master -- module-images
+            rsync -av --delete module-images temp_sync/
+
+            # Sync the module-images folder
+            git checkout upstream/master -- module-types
+            rsync -av --delete module-types temp_sync/
+
+            # Move the synced folders back to the root
+            mv temp_sync/configs ./device-types
+            mv temp_sync/elevation-images ./elevation-images
+            mv temp_sync/module-images ./module-images
+            mv temp_sync/module-types ./module-types
+
+        - name: Commit changes if any
+            run: |
+            git config --global user.name "github-actions"
+            git config --global user.email "github-actions@github.com"
+            git add configs data
+            if git diff --cached --quiet; then
+                echo "No changes to commit"
+            else
+                git commit -m "Sync configs and data folders from upstream"
+                git push
+            fi
