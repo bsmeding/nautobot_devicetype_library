@@ -33,25 +33,25 @@ jobs:
 
           # Sync the device-types folder
           git checkout upstream/main -- device-types
-          rsync -av --delete device-types/ temp_sync/device-types/
+          rsync -av --ignore-existing device-types/ temp_sync/device-types/
 
           # Sync the elevation-images folder
           git checkout upstream/main -- elevation-images
-          rsync -av --delete elevation-images/ temp_sync/elevation-images/
+          rsync -av --ignore-existing elevation-images/ temp_sync/elevation-images/
 
           # Sync the module-images folder
           git checkout upstream/main -- module-images
-          rsync -av --delete module-images/ temp_sync/module-images/
+          rsync -av --ignore-existing module-images/ temp_sync/module-images/
 
           # Sync the module-types folder
           git checkout upstream/main -- module-types
-          rsync -av --delete module-types/ temp_sync/module-types/
+          rsync -av --ignore-existing module-types/ temp_sync/module-types/
 
-          # Move the synced folders back to the root without nesting them
-          mv temp_sync/device-types/* ./device-types/
-          mv temp_sync/elevation-images/* ./elevation-images/
-          mv temp_sync/module-images/* ./module-images/
-          mv temp_sync/module-types/* ./module-types/
+          # Move the synced folders back to the root without overwriting existing content
+          rsync -av --ignore-existing temp_sync/device-types/ ./device-types/
+          rsync -av --ignore-existing temp_sync/elevation-images/ ./elevation-images/
+          rsync -av --ignore-existing temp_sync/module-images/ ./module-images/
+          rsync -av --ignore-existing temp_sync/module-types/ ./module-types/
 
           # Clean up the temp_sync folder
           rm -rf temp_sync
