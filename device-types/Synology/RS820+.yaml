@@ -1,6 +1,7 @@
 ---
 manufacturer: Synology
 model: RS820+
+slug: synology-rs820-plus
 part_number: RS820+
 u_height: 1
 is_full_depth: true
@@ -20,4 +21,3 @@ interfaces:
 console-ports:
   - name: Console
     type: de-9
-    mgmt_only: true

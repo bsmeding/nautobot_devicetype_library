@@ -1,15 +1,22 @@
 ---
 manufacturer: Panduit
 model: Opticom Rack Mount Fiber Enclosure, 2 RU
+slug: panduit-frme2
 part_number: FRME2
 u_height: 2
 is_full_depth: false
 subdevice_role: parent
 is_powered: false
-device-bays:
+module-bays:
   - name: A
+    position: A
   - name: B
+    position: B
   - name: C
+    position: C
   - name: D
+    position: D
   - name: E
+    position: E
   - name: F
+    position: F

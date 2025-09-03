@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: SURT20KRMXLT
+slug: apc-surt20krmxlt
 part_number: SURT20KRMXLT
 comments: "APC Smart-UPS RT 20kVA, 208V, LCD, rackmount, 12U, 4x NEMA L6-20R & 2x NEMA L6-30R outlets\n \n | RBC Information |           |\n | ---------------\
   \ | --------- |\n | RBC Replacement | APCRBC140 |\n | RBC Quantity    | 4         |"
@@ -31,3 +32,4 @@ power-outlets:
     type: nema-l6-20r
 module-bays:
   - name: SmartSlot
+    position: SmartSlot

@@ -1,6 +1,7 @@
 ---
 manufacturer: Alcatel-Lucent
 model: OS6900-X20
+slug: alcatel-lucent-os6900-x20
 part_number: 903167-90
 u_height: 1
 is_full_depth: true
@@ -71,5 +72,7 @@ interfaces:
 module-bays:
   - name: SLOT-2
     label: Front
+    position: '2'
   - name: SLOT-3
     label: Rear
+    position: '3'

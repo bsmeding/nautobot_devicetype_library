@@ -1,6 +1,7 @@
 ---
 manufacturer: Fortinet
 model: FortiGate 3300E
+slug: fortinet-fg-3300e
 part_number: FG-3300E
 u_height: 2
 is_full_depth: true

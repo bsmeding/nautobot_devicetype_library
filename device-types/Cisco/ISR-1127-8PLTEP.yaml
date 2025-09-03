@@ -2,6 +2,7 @@
 manufacturer: Cisco
 model: ISR 1127-8PLTEP
 part_number: C1127-8PLTEP
+slug: cisco-isr-1127-8pltep
 weight: 4.53
 weight_unit: lb
 u_height: 0
@@ -30,6 +31,7 @@ interfaces:
     type: 1000base-t
 module-bays:
   - name: Cellular
+    position: '1'
 console-ports:
   - name: con 0
     type: rj-45

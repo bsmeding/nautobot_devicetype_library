@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: Smart-UPS SMT1500RM2U
+slug: apc-smt1500rm2u
 part_number: SMT1500RM2U
 comments: "APC Smart-UPS, Line Interactive, 1500VA, Rackmount 2U, 120V, 6x NEMA 5-15R outlets, SmartSlot, AVR, LCD\n \n | RBC Information |           |\n\
   \ | --------------- | --------- |\n | RBC Replacement | APCRBC133 |\n | RBC Quantity    | 1         |"
@@ -27,4 +28,4 @@ power-outlets:
     type: nema-5-15r
 module-bays:
   - name: SmartSlot
-    position: Rear
+    position: SmartSlot

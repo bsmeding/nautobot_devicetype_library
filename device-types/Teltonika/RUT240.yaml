@@ -1,6 +1,7 @@
 ---
 manufacturer: Teltonika
 model: RUT240
+slug: teltonika-rut240
 part_number: RUT240
 u_height: 0.5
 is_full_depth: false

@@ -1,6 +1,7 @@
 ---
 manufacturer: SonicWall
 model: NSsp 15700
+slug: sonicwall-nssp-15700
 part_number: NSSP15700
 u_height: 2
 is_full_depth: true
@@ -13,6 +14,7 @@ module-bays:
   - name: PSU Slot 2
     position: '2'
   - name: Expansion Module
+    position: '1'
 inventory-items:
   - name: Storage-Module 1
     manufacturer: SonicWall

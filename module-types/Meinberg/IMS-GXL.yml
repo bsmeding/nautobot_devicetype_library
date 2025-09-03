@@ -1,0 +1,10 @@
+---
+manufacturer: Meinberg
+description: 448-channel multi-band, multi-GNSS receiver for reception of signals from the GPS, Galileo, BeiDou and GLONASS constellations.
+model: IMS-GXL
+console-ports:
+  - name: COM
+    type: de-9
+rear-ports:
+  - name: Antenna
+    type: bnc

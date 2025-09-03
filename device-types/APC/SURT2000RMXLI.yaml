@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: Smart-UPS RT 2000VA RM
+slug: apc-smart-ups-rt-2000va-rm
 part_number: SURT2000RMXLI
 u_height: 2
 is_full_depth: true
@@ -29,7 +30,6 @@ power-outlets:
   - name: Outlet 6
     type: iec-60320-c13
     power_port: Inlet
-interfaces:
-  - name: Ethernet
-    type: 100base-tx
-    mgmt_only: true
+module-bays:
+  - name: SmartSlot
+    position: SmartSlot

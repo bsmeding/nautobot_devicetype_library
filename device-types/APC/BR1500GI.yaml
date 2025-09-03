@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: BR1500GI
+slug: apc-br1500gi
 part_number: BR1500GI
 u_height: 0
 is_full_depth: false

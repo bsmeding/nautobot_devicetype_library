@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: AP7921B
+slug: apc-ap7921b
 part_number: AP7921B
 u_height: 1
 is_full_depth: false

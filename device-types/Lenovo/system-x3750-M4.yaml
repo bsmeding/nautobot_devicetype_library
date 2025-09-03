@@ -1,6 +1,7 @@
 ---
 manufacturer: Lenovo
 model: System x3750 M4
+slug: lenovo-system-x3750-m4
 part_number: 8722C1U
 u_height: 2
 is_full_depth: true
@@ -18,6 +19,3 @@ interfaces:
   - name: IMM
     type: 1000base-t
     mgmt_only: true
-console-ports:
-  - name: Rear VGA
-    type: other

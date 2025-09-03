@@ -1,14 +1,13 @@
 ---
 manufacturer: Huawei
 model: 2288H V5
+slug: huawei-2288h-v5
 part_number: H22-05-S8AFF
 u_height: 2
 is_full_depth: true
 console-ports:
   - name: Serial
     type: rj-45
-  - name: VGA
-    type: other
 power-ports:
   - name: PSU1
     type: iec-60320-c14

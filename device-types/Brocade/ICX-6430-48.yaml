@@ -1,6 +1,7 @@
 ---
 manufacturer: Brocade
 model: ICX 6430-48
+slug: brocade-icx6430-48
 part_number: ICX6430-48
 is_full_depth: false
 u_height: 1
@@ -121,4 +122,7 @@ console-ports:
 power-ports:
   - name: PSU0
     type: iec-60320-c14
+    maximum_draw: 38
+  - name: EPS1
+    type: dc-terminal
     maximum_draw: 38

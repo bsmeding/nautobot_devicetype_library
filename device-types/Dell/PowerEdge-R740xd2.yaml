@@ -1,13 +1,12 @@
 ---
 manufacturer: Dell
 model: PowerEdge R740xd2
+slug: dell-poweredge-r740xd2
 u_height: 2
 is_full_depth: true
 console-ports:
   - name: Serial
     type: de-9
-  - name: Front VGA
-    type: other
 power-ports:
   - name: Power 1
     type: iec-60320-c14

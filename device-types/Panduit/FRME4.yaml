@@ -1,21 +1,34 @@
 ---
 manufacturer: Panduit
 model: Opticom Rack Mount Fiber Enclosure, 4 RU
+slug: panduit-frme4
 part_number: FRME4
 u_height: 4
 is_full_depth: false
 subdevice_role: parent
 is_powered: false
-device-bays:
+module-bays:
   - name: A
+    position: A
   - name: B
+    position: B
   - name: C
+    position: C
   - name: D
+    position: D
   - name: E
+    position: E
   - name: F
+    position: F
   - name: G
+    position: G
   - name: H
+    position: H
   - name: J
+    position: J
   - name: K
+    position: K
   - name: L
+    position: L
   - name: M
+    position: M

@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: Smart-UPS SRT 5000VA 200V
+slug: apc-smart-ups-srt-5000va-200v
 part_number: SRT5KXLJ
 u_height: 3
 is_full_depth: true
@@ -28,3 +29,6 @@ interfaces:
   - name: Ethernet
     type: 100base-tx
     mgmt_only: true
+module-bays:
+  - name: SmartSlot
+    position: SmartSlot

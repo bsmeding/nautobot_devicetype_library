@@ -1,6 +1,7 @@
 ---
 manufacturer: Fortinet
 model: FortiGate 3700D
+slug: fortinet-fg-3700d
 part_number: FG-3700D
 u_height: 3
 weight: 21.3
@@ -8,6 +9,7 @@ weight_unit: kg
 airflow: front-to-rear
 is_full_depth: false
 front_image: true
+rear_image: false
 comments: '[FortiGate 3700D Series Datasheet](https://www.fortinet.com/content/dam/fortinet/assets/data-sheets/FortiGate_3700D.pdf)'
 console-ports:
   - name: Console

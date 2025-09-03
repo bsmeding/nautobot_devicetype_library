@@ -1,6 +1,7 @@
 ---
 manufacturer: NetApp
 model: FAS8200
+slug: netapp-fas8200
 part_number: FAS8200A
 u_height: 3
 is_full_depth: true
@@ -11,4 +12,6 @@ power-ports:
     type: iec-60320-c14
 module-bays:
   - name: A
+    position: A
   - name: B
+    position: B

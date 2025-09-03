@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: Smart-UPS 1500VA, Rack Mount, LCD 120V with SmartConnect Port
+slug: apc-smart-ups-1500va-rack-mount-lcd-120v-with-smartconnect-port
 part_number: SMT1500RM2UC
 u_height: 2
 is_full_depth: true
@@ -26,6 +27,6 @@ power-outlets:
   - name: Group 2 Outlet 3
     type: nema-5-15r
 interfaces:
-  - name: Ethernet
+  - name: SmartConnect
     type: 1000base-t
     mgmt_only: true

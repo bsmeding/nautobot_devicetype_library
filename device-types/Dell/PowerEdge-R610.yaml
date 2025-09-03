@@ -1,6 +1,7 @@
 ---
 manufacturer: Dell
 model: PowerEdge R610
+slug: dell-poweredge-r610
 u_height: 1
 is_full_depth: true
 comments: |
@@ -8,10 +9,6 @@ comments: |
 console-ports:
   - name: Serial
     type: de-9
-  - name: Front VGA
-    type: other
-  - name: Rear VGA
-    type: other
 power-ports:
   - name: Power 1
     type: iec-60320-c14

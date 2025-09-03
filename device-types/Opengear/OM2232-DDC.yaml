@@ -1,6 +1,7 @@
 ---
 manufacturer: Opengear
 model: OM2232-DDC
+slug: opengear-om2232-ddc
 part_number: OM2232-DDC
 u_height: 1
 is_full_depth: false

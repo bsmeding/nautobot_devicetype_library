@@ -1,6 +1,7 @@
 ---
 manufacturer: Huawei
 model: CE8850-64CQ-EI
+slug: huawei-ce8850-64cq-ei
 part_number: CE8850-64CQ-EI
 u_height: 2
 is_full_depth: true
@@ -9,8 +10,11 @@ weight: 22.2
 weight_unit: kg
 module-bays:
   - name: FAN1
+    position: '1'
   - name: FAN2
+    position: '2'
   - name: FAN3
+    position: '3'
   - name: PWR1
     position: '1'
   - name: PWR2

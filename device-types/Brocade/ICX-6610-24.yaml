@@ -1,9 +1,13 @@
 ---
 manufacturer: Brocade
 model: ICX 6610-24
+slug: brocade-icx6610-24
 part_number: ICX6610-24
 is_full_depth: false
 u_height: 1
+airflow: front-to-rear
+weight: 14.15
+weight_unit: lb
 interfaces:
   - name: GigEthernetmgmt1
     type: 1000base-t
@@ -79,10 +83,8 @@ interfaces:
 console-ports:
   - name: con0
     type: rj-45
-power-ports:
+module-bays:
   - name: PSU1
-    type: iec-60320-c14
-    maximum_draw: 120
+    position: '1'
   - name: PSU2
-    type: iec-60320-c14
-    maximum_draw: 120
+    position: '2'

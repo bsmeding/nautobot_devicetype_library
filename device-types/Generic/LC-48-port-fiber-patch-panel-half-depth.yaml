@@ -1,10 +1,12 @@
 ---
 manufacturer: Generic
 model: LC-48-port Fiber Patch Panel Half Depth
+slug: generic-lc-48-port-fiber-patch-panel-half-depth
 u_height: 2
 is_full_depth: false
 airflow: passive
 is_powered: false
+front_image: true
 front-ports:
   - name: Port 1
     type: lc

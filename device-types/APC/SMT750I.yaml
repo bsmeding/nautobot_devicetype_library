@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: SMT750I
+slug: apc-smt750i
 part_number: SMT750I
 u_height: 0
 is_full_depth: false
@@ -29,3 +30,6 @@ console-ports:
     type: usb-a
   - name: Serial
     type: rj-45
+module-bays:
+  - name: SmartSlot
+    position: SmartSlot

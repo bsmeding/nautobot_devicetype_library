@@ -1,6 +1,7 @@
 ---
 manufacturer: Eaton
 model: 9PX 3000i RT 2U
+slug: eaton-9px-3000i-rt-2u
 part_number: 9PX3000iRT2U
 u_height: 2
 is_full_depth: true
@@ -68,6 +69,10 @@ interfaces:
     label: Batt detection
 module-bays:
   - name: Communication card slot
+    position: '1'
   - name: Environmental Sensor 1
+    position: '1'
   - name: Environmental Sensor 2
+    position: '2'
   - name: Environmental Sensor 3
+    position: '3'

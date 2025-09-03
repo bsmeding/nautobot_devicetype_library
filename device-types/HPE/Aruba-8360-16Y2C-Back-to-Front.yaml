@@ -1,9 +1,12 @@
 ---
 manufacturer: HPE
 model: Aruba 8360-16Y2C Back-to-Front
+slug: hpe-aruba-8360-16y2c-back-to-front
 part_number: JL703C
 u_height: 1
 is_full_depth: false
+front_image: true
+rear_image: true
 airflow: rear-to-front
 console-ports:
   - name: rj45-console

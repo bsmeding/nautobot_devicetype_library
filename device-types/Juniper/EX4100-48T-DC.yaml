@@ -1,6 +1,7 @@
 ---
 manufacturer: Juniper
 model: EX4100-48T-DC
+slug: juniper-ex4100-48t-dc
 part_number: EX4100-48T-DC
 u_height: 1
 is_full_depth: false
@@ -131,9 +132,9 @@ interfaces:
   - name: et-0/1/3
     type: 25gbase-x-sfp28
   - name: xe-0/2/0
-    type: 1000base-x-sfp
+    type: 10gbase-x-sfpp
   - name: xe-0/2/1
-    type: 1000base-x-sfp
+    type: 10gbase-x-sfpp
   - name: xe-0/2/2
     type: 10gbase-x-sfpp
   - name: xe-0/2/3

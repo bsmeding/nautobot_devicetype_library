@@ -1,9 +1,12 @@
 ---
 manufacturer: HPE
 model: Aruba 2930M-24G
+slug: hpe-aruba-2930m-24g
 part_number: JL319A
 u_height: 1
 is_full_depth: false
+front_image: true
+rear_image: true
 comments: '[Aruba 2930M Switch Series Datasheet](https://www.arubanetworks.com/assets/ds/DS_2930MSwitchSeries.pdf)'
 weight: 9.81
 weight_unit: lb
@@ -11,6 +14,7 @@ module-bays:
   - name: Uplink
     position: A
   - name: Stacking Module
+    position: Stack
   - name: PS1
     position: '1'
   - name: PS2
@@ -21,9 +25,10 @@ console-ports:
   - name: USB Console
     type: usb-micro-b
 interfaces:
-  - name: Management
-    type: 1000base-t
+  - name: oobm
+    type: 100base-tx
     mgmt_only: true
+    description: Out of Band Management (oobm) interface
   - name: '1'
     type: 1000base-t
   - name: '2'

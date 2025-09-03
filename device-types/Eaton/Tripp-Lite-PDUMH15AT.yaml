@@ -1,6 +1,7 @@
 ---
 manufacturer: Eaton
 model: Tripp Lite PDUMH15AT
+slug: eaton-tripp-lite-pdumh15at
 part_number: '037332126658'
 u_height: 1
 is_full_depth: false
@@ -35,3 +36,6 @@ power-outlets:
     type: nema-5-15r
   - name: '8'
     type: nema-5-15r
+module-bays:
+  - name: Accessory Slot
+    position: '1'

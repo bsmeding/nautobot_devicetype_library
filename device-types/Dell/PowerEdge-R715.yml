@@ -1,13 +1,12 @@
 ---
 manufacturer: Dell
 model: PowerEdge R715
+slug: dell-poweredge-r715
 u_height: 2
 is_full_depth: true
 console-ports:
   - name: Serial
     type: de-9
-  - name: VGA
-    type: other
 power-ports:
   - name: Power 1
     type: iec-60320-c14

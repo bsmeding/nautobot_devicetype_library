@@ -1,6 +1,7 @@
 ---
 manufacturer: Huawei
 model: S6730-H28Y4C
+slug: huawei-s6730-h28y4c
 part_number: S6730-H28Y4C
 u_height: 1
 is_full_depth: false
@@ -10,7 +11,9 @@ console-ports:
     type: rj-45
 module-bays:
   - name: PWR1
+    position: '1'
   - name: PWR2
+    position: '2'
 interfaces:
   - name: MEth0/0/1
     type: 1000base-t

@@ -1,16 +1,13 @@
 ---
 manufacturer: Dell
 model: PowerEdge R740
+slug: dell-poweredge-r740
 u_height: 2
 is_full_depth: true
 comments: '[Technical Guide](https://i.dell.com/sites/csdocuments/Shared-Content_data-Sheets_Documents/en/aa/PowerEdge_R740_R740xd_Technical_Guide.pdf)'
 console-ports:
   - name: Rear Serial
     type: de-9
-  - name: Front VGA
-    type: other
-  - name: Rear VGA
-    type: other
 interfaces:
   - name: iDRAC9
     type: 1000base-t
@@ -18,10 +15,10 @@ interfaces:
 module-bays:
   - name: PSU-1
     label: '1'
-    position: PSU-1
+    position: '1'
   - name: PSU-2
     label: '2'
-    position: PSU-2
+    position: '2'
   - name: NUMA 0 - NDC slot 1
     position: NDC-1
   - name: NUMA 0 - PCIe slot 1 - FH
