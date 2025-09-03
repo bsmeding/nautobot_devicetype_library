@@ -1,69 +1,52 @@
-########################################
-#
-#  Sync with the upstream Nautobot device_type repository to get latest changes 
-#
-########################################
-
-name: Sync Upstream Subfolder
+name: Sync NetBox Device Types
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # Runs daily at midnight UTC
-  workflow_dispatch:  # Allows manual triggering
+    - cron: '0 0 * * *'   # daily at 00:00 UTC
+  workflow_dispatch: {}
 
 jobs:
   sync:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout your forked repository
+      - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Add upstream repository
+      - name: Add upstream NetBox
         run: |
-          git remote add upstream https://github.com/nautobot/devicetype-library
-          git fetch upstream main
+          git remote add upstream https://github.com/netbox-community/devicetype-library || true
+          git fetch upstream master
 
-      - name: Sync device-types, elevation-images, module-images, and module-types from upstream
+      - name: Sync folders from upstream (add only, do not overwrite)
         run: |
-          # Create a temporary folder to hold the upstream files
           mkdir -p temp_sync
 
-          # Sync the device-types folder
-          git checkout upstream/main -- device-types
-          rsync -av --ignore-existing device-types/ temp_sync/device-types/
+          git checkout upstream/master -- device-types elevation-images module-images module-types rack-types
 
-          # Sync the elevation-images folder
-          git checkout upstream/main -- elevation-images
-          rsync -av --ignore-existing elevation-images/ temp_sync/elevation-images/
+          rsync -av --ignore-existing device-types/      temp_sync/device-types/
+          rsync -av --ignore-existing elevation-images/  temp_sync/elevation-images/
+          rsync -av --ignore-existing module-images/     temp_sync/module-images/
+          rsync -av --ignore-existing module-types/      temp_sync/module-types/
+          rsync -av --ignore-existing rack-types/        temp_sync/rack-types/
 
-          # Sync the module-images folder
-          git checkout upstream/main -- module-images
-          rsync -av --ignore-existing module-images/ temp_sync/module-images/
+          rsync -av --ignore-existing temp_sync/device-types/      ./device-types/
+          rsync -av --ignore-existing temp_sync/elevation-images/  ./elevation-images/
+          rsync -av --ignore-existing temp_sync/module-images/     ./module-images/
+          rsync -av --ignore-existing temp_sync/module-types/      ./module-types/
+          rsync -av --ignore-existing temp_sync/rack-types/        ./rack-types/
 
-          # Sync the module-types folder
-          git checkout upstream/main -- module-types
-          rsync -av --ignore-existing module-types/ temp_sync/module-types/
-
-          # Move the synced folders back to the root without overwriting existing content
-          rsync -av --ignore-existing temp_sync/device-types/ ./device-types/
-          rsync -av --ignore-existing temp_sync/elevation-images/ ./elevation-images/
-          rsync -av --ignore-existing temp_sync/module-images/ ./module-images/
-          rsync -av --ignore-existing temp_sync/module-types/ ./module-types/
-
-          # Clean up the temp_sync folder
           rm -rf temp_sync
 
       - name: Commit changes if any
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
-          git add device-types elevation-images module-images module-types
+          git add device-types elevation-images module-images module-types rack-types
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            echo "No new upstream files to commit"
           else
-            git commit -m "Sync folders from upstream"
+            git commit -m "Sync new files from netbox-community/devicetype-library"
             git push
           fi
