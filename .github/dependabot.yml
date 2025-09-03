@@ -6,9 +6,9 @@ updates:
     schedule:
       interval: monthly
       time: '02:00'
-      timezone: America/New_York
+      timezone: Europe/Amsterdam
     labels:
       - dependencies
-    target-branch: master
+    target-branch: main
     assignees:
-        - "danner26"
+        - "bsmeding"
