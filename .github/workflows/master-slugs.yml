@@ -35,10 +35,10 @@ jobs:
       - name: Commit and Push Changes to Master
         uses: EndBug/add-and-commit@v9
         with:
-          author_name: NetBox-Bot
-          author_email: info@netboxlabs.com
-          committer_name: NetBox-Bot
-          committer_email: info@netboxlabs.com
+          author_name: NetDevOps-Bot
+          author_email: bot@netdevops.it
+          committer_name: NetDevOps-Bot
+          committer_email: bot@netdevops.it
           default_author: github_actions
           message: "Regenerate master slug list after successful PR merge"
           push: true

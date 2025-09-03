@@ -1,41 +1,69 @@
-name: Sync NetBox Device Types (all vendors)
+########################################
+#
+#  Sync with the upstream Nautobot device_type repository to get latest changes 
+#
+########################################
+
+name: Sync Upstream Subfolder
 
 on:
   schedule:
-    - cron: '0 0 * * *'   # daily 00:00 UTC
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
-  pull-requests: write
+    - cron: '0 0 * * *'  # Runs daily at midnight UTC
+  workflow_dispatch:  # Allows manual triggering
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout fork
+      - name: Checkout your forked repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Add upstream (NetBox)
+      - name: Add upstream repository
         run: |
-          git remote add upstream https://github.com/netbox-community/devicetype-library
-          git fetch upstream master
+          git remote add upstream https://github.com/nautobot/devicetype-library
+          git fetch upstream main
 
-      - name: Sync folders from upstream/master
+      - name: Sync device-types, elevation-images, module-images, and module-types from upstream
         run: |
-          git checkout upstream/master -- device-types elevation-images module-images module-types rack-types
+          # Create a temporary folder to hold the upstream files
+          mkdir -p temp_sync
 
-      - name: Lint YAML (optional)
+          # Sync the device-types folder
+          git checkout upstream/main -- device-types
+          rsync -av --ignore-existing device-types/ temp_sync/device-types/
+
+          # Sync the elevation-images folder
+          git checkout upstream/main -- elevation-images
+          rsync -av --ignore-existing elevation-images/ temp_sync/elevation-images/
+
+          # Sync the module-images folder
+          git checkout upstream/main -- module-images
+          rsync -av --ignore-existing module-images/ temp_sync/module-images/
+
+          # Sync the module-types folder
+          git checkout upstream/main -- module-types
+          rsync -av --ignore-existing module-types/ temp_sync/module-types/
+
+          # Move the synced folders back to the root without overwriting existing content
+          rsync -av --ignore-existing temp_sync/device-types/ ./device-types/
+          rsync -av --ignore-existing temp_sync/elevation-images/ ./elevation-images/
+          rsync -av --ignore-existing temp_sync/module-images/ ./module-images/
+          rsync -av --ignore-existing temp_sync/module-types/ ./module-types/
+
+          # Clean up the temp_sync folder
+          rm -rf temp_sync
+
+      - name: Commit changes if any
         run: |
-          pipx install yamllint
-          yamllint -s device-types
-
-      - name: Create PR if changes
-        uses: peter-evans/create-pull-request@v6
-        with:
-          commit-message: "chore(sync): update from netbox-community/devicetype-library (master)"
-          title: "Sync: NetBox devicetype-library (master)"
-          branch: chore/sync-netbox
-          body: "Automated sync of device-types, elevation-images, module-images, module-types, rack-types."
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add device-types elevation-images module-images module-types
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Sync folders from upstream"
+            git push
+          fi
