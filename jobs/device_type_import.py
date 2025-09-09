@@ -16,7 +16,6 @@ from nautobot.dcim.models import (
     DeviceBay
 )
 from nautobot.extras.models import ImageAttachment
-from django.core.files.images import ImageFile
 from django.core.files.base import File
 from django.contrib.contenttypes.models import ContentType
 
@@ -100,11 +99,28 @@ class SyncDeviceTypes(Job):
             self.logger.warning("No matching device type files found.")
             return
 
-        # If dry-run is enabled, only list the files
+        # If dry-run is enabled, only list the files and, if requested, show potential images
         if dry_run:
             self.logger.info("Dry-run mode enabled. The following files would be processed:")
             for file_path in files_to_import:
                 self.logger.info(f" - {file_path}")
+                if include_images:
+                    try:
+                        with open(file_path, "r") as f:
+                            dd = yaml.safe_load(f)
+                        images_dir = self._resolve_manufacturer_images_dir(dd["manufacturer"])
+                        if not images_dir:
+                            self.logger.info("[Dry-run] No elevation-images directory for manufacturer")
+                            continue
+                        front_path, rear_path = self._find_elevation_image_paths(images_dir, dd["manufacturer"], dd["model"])
+                        if front_path:
+                            self.logger.info(f"[Dry-run] Would attach FRONT image: {front_path}")
+                        if rear_path:
+                            self.logger.info(f"[Dry-run] Would attach REAR image: {rear_path}")
+                        if not front_path and not rear_path:
+                            self.logger.info("[Dry-run] No elevation images found")
+                    except Exception as img_err:
+                        self.logger.warning(f"[Dry-run] Unable to evaluate images for {file_path}: {img_err}")
             self.logger.info("Dry-run completed successfully.")
             return
 
@@ -127,36 +143,11 @@ class SyncDeviceTypes(Job):
                     }
                 )
 
-                content_type = ContentType.objects.get_for_model(DeviceType)
-
-                def upload_image(image_type, image_path):
-                    existing_image = ImageAttachment.objects.filter(
-                        content_type=content_type,
-                        object_id=device_type.id,
-                        name=f"{device_data['model']} {image_type.capitalize()} Image"
-                    ).first()
-                    if existing_image:
-                        self.logger.info(f"{image_type.capitalize()} image already exists for {device_data['model']}, skipping upload.")
-                        return
-                    if os.path.exists(image_path):
-                        with open(image_path, 'rb') as img:
-                            image = ImageFile(img, name=os.path.basename(image_path))
-                            img_attachment = ImageAttachment.objects.create(
-                                content_type=content_type,
-                                object_id=device_type.id,
-                                image=image,
-                                name=f"{device_data['model']} {image_type.capitalize()} Image"
-                            )
-                        setattr(device_type, f"{image_type}_image", img_attachment.image.name)
-                        device_type.save()
-
-                if include_images and device_data.get("front_image"):
-                    front_image_path = os.path.join(ELEVATION_IMAGE_PATH, device_data["manufacturer"], f"{device_data['manufacturer']}-{device_data['part_number']}.front.png")
-                    upload_image("front", front_image_path)
-
-                if include_images and device_data.get("rear_image"):
-                    rear_image_path = os.path.join(ELEVATION_IMAGE_PATH, device_data["manufacturer"], f"{device_data['manufacturer']}-{device_data['part_number']}.rear.png")
-                    upload_image("rear", rear_image_path)
+                if include_images:
+                    try:
+                        self._attach_elevation_images(device_type, device_data["manufacturer"], device_data["model"], commit=True)
+                    except Exception as img_err:
+                        self.logger.warning(f"Images not attached for {device_data['manufacturer']} {device_data['model']}: {img_err}")
 
                 # Helper function to process components safely
                 def process_component(component_list, component_model, fields, fk_field="device_type", parent_field="device_type_id", parent_value=None):
@@ -226,8 +217,8 @@ class SyncDeviceTypes(Job):
         "<manufacturer>-<model>.front.(png|jpg|jpeg)" (case-insensitive), and similar for rear.
         Falls back to using only the model in the filename if needed.
         """
-        images_dir = os.path.join(BASE_DIR, "elevation-images", manufacturer_name)
-        if not os.path.isdir(images_dir):
+        images_dir = self._resolve_manufacturer_images_dir(manufacturer_name)
+        if not images_dir:
             self.log_info(f"No elevation-images directory for manufacturer '{manufacturer_name}'. Skipping images.")
             return
 
@@ -314,7 +305,14 @@ class SyncDeviceTypes(Job):
 
         manufacturer_slug = self._slugify(manufacturer_name)
         model_slug = self._slugify(model_name)
-        candidate_stems = [f"{manufacturer_slug}-{model_slug}", model_slug]
+        family_slug = model_slug.split("-")[0] if model_slug else None
+        candidate_stems = [
+            f"{manufacturer_slug}-{model_slug}",
+            model_slug,
+            f"{manufacturer_slug}-{family_slug}" if family_slug else None,
+            family_slug,
+        ]
+        candidate_stems = [s for s in candidate_stems if s]
         extensions = ["png", "jpg", "jpeg"]
 
         front_path = None
@@ -336,6 +334,24 @@ class SyncDeviceTypes(Job):
                 break
 
         return (front_path, rear_path)
+
+    def _resolve_manufacturer_images_dir(self, manufacturer_name):
+        """Resolve the images directory for a manufacturer in a case/slug-insensitive way."""
+        images_root = os.path.join(BASE_DIR, "elevation-images")
+        if not os.path.isdir(images_root):
+            return None
+        target_lower = str(manufacturer_name).lower()
+        target_slug = self._slugify(manufacturer_name)
+        try:
+            for entry in os.listdir(images_root):
+                full_path = os.path.join(images_root, entry)
+                if not os.path.isdir(full_path):
+                    continue
+                if entry.lower() == target_lower or self._slugify(entry) == target_slug:
+                    return full_path
+        except Exception:
+            return None
+        return None
 
     def _slugify(self, value):
         """Simplistic slugify to align with devicetype-library filenames."""
