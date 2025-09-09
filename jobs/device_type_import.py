@@ -305,14 +305,23 @@ class SyncDeviceTypes(Job):
 
         manufacturer_slug = self._slugify(manufacturer_name)
         model_slug = self._slugify(model_name)
-        family_slug = model_slug.split("-")[0] if model_slug else None
-        candidate_stems = [
-            f"{manufacturer_slug}-{model_slug}",
-            model_slug,
-            f"{manufacturer_slug}-{family_slug}" if family_slug else None,
-            family_slug,
-        ]
-        candidate_stems = [s for s in candidate_stems if s]
+
+        # Build progressive stems from the full model slug by removing trailing segments
+        progressive_stems = []
+        if model_slug:
+            current = model_slug
+            while True:
+                if current not in progressive_stems:
+                    progressive_stems.append(current)
+                if "-" not in current:
+                    break
+                current = current.rsplit("-", 1)[0]
+
+        # Combine with manufacturer-prefixed variants
+        candidate_stems = []
+        for stem in progressive_stems:
+            candidate_stems.append(stem)
+            candidate_stems.append(f"{manufacturer_slug}-{stem}")
         extensions = ["png", "jpg", "jpeg"]
 
         front_path = None
