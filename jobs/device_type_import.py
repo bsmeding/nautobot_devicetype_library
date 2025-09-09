@@ -306,14 +306,34 @@ class SyncDeviceTypes(Job):
         manufacturer_slug = self._slugify(manufacturer_name)
         model_slug = self._slugify(model_name)
 
-        # Build progressive stems from the full model slug by removing trailing segments
-        progressive_stems = []
+        # Generate base variants: original model slug and versions with common prefixes removed
+        base_variants = []
         if model_slug:
-            current = model_slug
+            base_variants.append(model_slug)
+            # Remove common marketing prefixes like 'catalyst-'
+            common_prefixes = ["catalyst-"]
+            for prefix in common_prefixes:
+                if model_slug.startswith(prefix):
+                    base_variants.append(model_slug[len(prefix):])
+
+        # Add variants where first token is prefixed with 'c' (e.g., 9300-48t -> c9300-48t)
+        augmented_variants = list(base_variants)
+        for variant in base_variants:
+            parts = variant.split("-") if variant else []
+            if parts and not parts[0].startswith("c"):
+                prefixed = "-".join(["c" + parts[0]] + parts[1:])
+                if prefixed not in augmented_variants:
+                    augmented_variants.append(prefixed)
+        base_variants = augmented_variants
+
+        # Build progressive stems from each base variant by removing trailing segments
+        progressive_stems = []
+        for variant in base_variants:
+            current = variant
             while True:
-                if current not in progressive_stems:
+                if current and current not in progressive_stems:
                     progressive_stems.append(current)
-                if "-" not in current:
+                if not current or "-" not in current:
                     break
                 current = current.rsplit("-", 1)[0]
 
