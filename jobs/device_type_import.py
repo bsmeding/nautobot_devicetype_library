@@ -220,27 +220,27 @@ class SyncDeviceTypes(Job):
         """
         images_dir = self._resolve_manufacturer_images_dir(manufacturer_name)
         if not images_dir:
-            self.log_info(f"No elevation-images directory for manufacturer '{manufacturer_name}'. Skipping images.")
+            self.logger.info(f"No elevation-images directory for manufacturer '{manufacturer_name}'. Skipping images.")
             return
 
         front_path, rear_path = self._find_elevation_image_paths(images_dir, manufacturer_name, model_name)
 
         if not front_path and not rear_path:
-            self.log_info(f"No elevation images found for {manufacturer_name} {model_name}.")
+            self.logger.info(f"No elevation images found for {manufacturer_name} {model_name}.")
             return
 
         if not commit:
             if front_path:
-                self.log_info(f"[Dry-run] Would attach FRONT image: {front_path}")
+                self.logger.info(f"[Dry-run] Would attach FRONT image: {front_path}")
             if rear_path:
-                self.log_info(f"[Dry-run] Would attach REAR image: {rear_path}")
+                self.logger.info(f"[Dry-run] Would attach REAR image: {rear_path}")
             return
 
         # Always use ImageAttachment for reliability across deployments
         # Attach FRONT
         if front_path:
             self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
-            self.log_success(f"Attached FRONT image (as attachment) to {manufacturer_name} {model_name}.")
+            self.logger.info(f"Attached FRONT image (as attachment) to {manufacturer_name} {model_name}.")
             # Clear any model field to avoid stale/broken links in UI
             try:
                 if hasattr(device_type, "front_image") and getattr(device_type, "front_image"):
@@ -253,7 +253,7 @@ class SyncDeviceTypes(Job):
         # Attach REAR
         if rear_path:
             self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
-            self.log_success(f"Attached REAR image (as attachment) to {manufacturer_name} {model_name}.")
+            self.logger.info(f"Attached REAR image (as attachment) to {manufacturer_name} {model_name}.")
             # Clear any model field to avoid stale/broken links in UI
             try:
                 if hasattr(device_type, "rear_image") and getattr(device_type, "rear_image"):
@@ -282,9 +282,9 @@ class SyncDeviceTypes(Job):
             saved_path = img.image.path
             exists = os.path.exists(saved_path)
             url = getattr(img.image, "url", None)
-            self.log_info(f"Attachment stored at: {saved_path} (exists={exists}) url={url}")
+            self.logger.info(f"Attachment stored at: {saved_path} (exists={exists}) url={url}")
         except Exception as info_err:
-            self.log_warning(f"Unable to resolve stored attachment path/url: {info_err}")
+            self.logger.warning(f"Unable to resolve stored attachment path/url: {info_err}")
 
     def _find_elevation_image_paths(self, images_dir, manufacturer_name, model_name):
         """Return (front_path, rear_path) for the given manufacturer/model if found.
