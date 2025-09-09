@@ -1,12 +1,16 @@
 ---
 manufacturer: Ubiquiti
 model: Cloud Key Gen2
+slug: ubiquiti-cloud-key-gen2
 part_number: uck-g2
 comments: |
   Unifi Cloud Key Generation 2
 
   PoE in 24V or USB-type C Power
 u_height: 1
+weight: 150
+weight_unit: g
+airflow: passive
 is_full_depth: false
 interfaces:
   - name: eth0

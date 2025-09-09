@@ -2,6 +2,7 @@
 manufacturer: Cisco
 model: Catalyst 9300-48T
 part_number: C9300-48T
+slug: cisco-c9300-48t
 u_height: 1
 is_full_depth: true
 weight: 16.43
@@ -126,5 +127,8 @@ module-bays:
   - name: PS-B
     position: B
   - name: FAN 1
+    position: '1'
   - name: FAN 2
+    position: '2'
   - name: FAN 3
+    position: '3'

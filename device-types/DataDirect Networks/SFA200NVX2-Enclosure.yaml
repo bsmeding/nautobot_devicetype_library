@@ -1,6 +1,7 @@
 ---
 manufacturer: DataDirect Networks
 model: SFA200NVX2 Enclosure
+slug: datadirect-networks-sfa200nvx2-enclosure
 comments: 24bay Enclosure for SFA200NVX2 or SFA400NVX2
 part_number: ENC-200NVX2
 u_height: 2
@@ -19,7 +20,5 @@ module-bays:
 device-bays:
   - name: Controller 0
     label: Controller Slot 0
-    position: '0'
   - name: Controller 1
     label: Controller Slot 1
-    position: '1'

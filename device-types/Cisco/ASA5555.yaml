@@ -1,8 +1,10 @@
 ---
 manufacturer: Cisco
 model: ASA5555
+slug: cisco-asa5555
 part_number: ASA5555
 u_height: 1
+is_full_depth: true
 console-ports:
   - name: Con 0
     type: rj-45

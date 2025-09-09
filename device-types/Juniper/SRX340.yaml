@@ -1,6 +1,7 @@
 ---
 manufacturer: Juniper
 model: SRX340
+slug: juniper-srx340
 part_number: SRX340-SYS-JB
 u_height: 1
 weight: 10.80

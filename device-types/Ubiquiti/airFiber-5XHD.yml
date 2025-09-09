@@ -1,6 +1,7 @@
 ---
 manufacturer: Ubiquiti
 model: airFiber 5XHD
+slug: ubiquiti-airfiber-5xhd
 part_number: AF-5XHD
 comments: |
   ath0 is setup to use ieee802.11ax as LTE currently doesn't allow wireless
@@ -10,6 +11,9 @@ comments: |
   The eth0 and ath0 are permanently bridged as this is a L2 bridge device.
 u_height: 0
 is_full_depth: false
+airflow: passive
+weight: 0.35
+weight_unit: kg
 interfaces:
   - name: br0
     type: bridge
@@ -18,6 +22,7 @@ interfaces:
     label: Ethernet
     type: 1000base-t
     poe_mode: pd
+    poe_type: passive-48v-4pair
   - name: ath0
     label: Wireless
     type: ieee802.11ax

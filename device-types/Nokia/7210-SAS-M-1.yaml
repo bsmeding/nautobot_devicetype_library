@@ -1,6 +1,7 @@
 ---
 manufacturer: Nokia
 model: 7210 SAS-M-1
+slug: nokia-7210-sas-m-1
 part_number: 3HE04699AAAB01
 u_height: 2
 is_full_depth: false
@@ -65,6 +66,10 @@ interfaces:
     type: 10gbase-x-xfp
 module-bays:
   - name: mda-m2-xfp
+    position: '1'
   - name: Power Supply 1
+    position: '1'
   - name: Power Supply 2
+    position: '2'
   - name: Fan Tray 1
+    position: '1'

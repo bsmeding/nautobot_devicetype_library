@@ -1,6 +1,7 @@
 ---
 manufacturer: Mimosa Networks
 model: B5c
+slug: mimosa-networks-b5c
 part_number: b5c
 u_height: 0
 is_full_depth: false
@@ -9,6 +10,7 @@ interfaces:
     label: Ethernet
     type: 1000base-t
     poe_mode: pd
+    poe_type: passive-48v-2pair
   - name: wifi0
     label: Wireless
     type: ieee802.11ax

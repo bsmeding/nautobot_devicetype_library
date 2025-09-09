@@ -1,6 +1,7 @@
 ---
 manufacturer: Netgate
 model: 7100 Security Gateway
+slug: netgate-7100-security-gateway
 u_height: 1
 is_full_depth: false
 console-ports:
@@ -56,3 +57,4 @@ interfaces:
 module-bays:
   - name: pci1
     description: PCI-E 3.0 4x
+    position: PCI1

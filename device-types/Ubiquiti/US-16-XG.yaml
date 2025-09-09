@@ -1,6 +1,7 @@
 ---
 manufacturer: Ubiquiti
 model: UniFi Switch 16 XG
+slug: ubiquiti-unifi-switch-16-xg
 part_number: US-16-XG
 comments: |
   UniFi Switch 16 XG, 10G 16-Port Managed Aggregation Switch, 56W (32W with no GBICs), (12) SFP+, (4) 1/10 Gigabit
@@ -8,6 +9,11 @@ comments: |
   Dimensions: 443 x 221 x 43 mm (17.44 x 8.70 x 1.69")
 u_height: 1
 is_full_depth: false
+weight: 2.71
+weight_unit: kg
+airflow: front-to-rear
+front_image: true
+rear_image: false
 interfaces:
   - name: SFP+ 1
     type: 10gbase-x-sfpp
@@ -49,6 +55,5 @@ power-ports:
     type: iec-60320-c14
     maximum_draw: 56
   - name: 48/24VDC
-    # TODO: There is no proper DC "terminalblock" connection type defined
-    type: iec-60320-c20
+    type: dc-terminal
     maximum_draw: 56

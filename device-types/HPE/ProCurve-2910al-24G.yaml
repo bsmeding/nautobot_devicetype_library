@@ -1,6 +1,7 @@
 ---
 manufacturer: HPE
 model: ProCurve 2910al-24G
+slug: hpe-procurve-2910al-24g
 part_number: J9145A
 u_height: 1
 is_full_depth: false
@@ -10,6 +11,9 @@ power-ports:
   - name: PS1
     type: iec-60320-c14
     maximum_draw: 82
+  - name: RPS
+    type: dc-terminal
+    maximum_draw: 100
 comments: '[HPE 2910al Switch Series](https://support.hpe.com/hpesc/public/docDisplay?docId=emr_na-c01844343)'
 console-ports:
   - name: Console

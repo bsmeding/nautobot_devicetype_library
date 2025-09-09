@@ -1,6 +1,7 @@
 ---
 manufacturer: Server Technology
 model: C2XG24SN-YCLN5D6 (Link)
+slug: server-technology-c2xg24sn-ycln5d6
 part_number: C2XG24SN-YCLN5D6
 u_height: 2
 is_full_depth: true
@@ -10,7 +11,6 @@ console-ports:
   - name: link
     label: LINK
     type: rj-12
-    poe: true
   - name: th1
     label: T/H1
     type: rj-11

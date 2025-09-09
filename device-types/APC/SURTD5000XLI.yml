@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: Smart-UPS RT 5000VA 230V
+slug: apc-smart-ups-rt-5000va-230v
 part_number: SURTD5000XLI
 u_height: 3.0
 is_full_depth: true
@@ -48,4 +49,4 @@ power-outlets:
     power_port: Inlet
 module-bays:
   - name: SmartSlot
-    position: Rear
+    position: SmartSlot

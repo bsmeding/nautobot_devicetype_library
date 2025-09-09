@@ -1,0 +1,12 @@
+---
+manufacturer: Meinberg
+comments: |
+  184-channel multi-band, multi-GNSS receiver for reception of signals from the GPS, Galileo, BeiDou and GLONASS constellations.
+  Requires a Meinberg GNSS Multi-Band Antenna.
+model: IMS-GNM
+console-ports:
+  - name: COM
+    type: de-9
+rear-ports:
+  - name: Antenna
+    type: bnc

@@ -1,6 +1,7 @@
 ---
 manufacturer: Juniper
 model: EX4200-24PX
+slug: juniper-ex4200-24px
 u_height: 1
 is_full_depth: true
 weight: 8.16
@@ -108,10 +109,10 @@ interfaces:
     poe_type: type2-ieee802.3at
   - name: vcp-0
     label: Virtual Chassis Port 0
-    type: other
+    type: juniper-vcp
   - name: vcp-1
     label: Virtual Chassis Port 1
-    type: other
+    type: juniper-vcp
 module-bays:
   - name: Power Supply 0
     label: PSU 0

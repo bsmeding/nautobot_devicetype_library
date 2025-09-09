@@ -1,6 +1,7 @@
 ---
 manufacturer: Alcatel-Lucent
 model: OS6900-X40
+slug: alcatel-lucent-os6900-x40
 part_number: 903168-90
 u_height: 1
 is_full_depth: true
@@ -111,5 +112,7 @@ interfaces:
 module-bays:
   - name: SLOT-2
     label: Front
+    position: '2'
   - name: SLOT-3
     label: Rear
+    position: '3'

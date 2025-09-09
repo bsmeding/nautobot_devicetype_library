@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: SMT1500RMI2U
+slug: apc-smt1500rmi2u
 part_number: SMT1500RMI2U
 u_height: 2
 is_full_depth: true
@@ -30,3 +31,4 @@ power-outlets:
     power_port: Source
 module-bays:
   - name: SmartSlot
+    position: SmartSlot

@@ -1,16 +1,15 @@
 ---
 manufacturer: Dell
 model: PowerEdge R640
+slug: dell-poweredge-r640
 u_height: 1
 is_full_depth: true
 subdevice_role: parent
+weight: 29
+weight_unit: kg
 console-ports:
   - name: Serial
     type: de-9
-  - name: Front VGA
-    type: other
-  - name: Rear VGA
-    type: other
 power-ports:
   - name: Power 1
     type: iec-60320-c14

@@ -1,6 +1,7 @@
 ---
 manufacturer: Dell
 model: PowerEdge T310
+slug: dell-poweredge-t310
 u_height: 0
 is_full_depth: false
 subdevice_role: parent
@@ -8,8 +9,6 @@ comments: '[T310-SpecSheet.pdf](https://i.dell.com/sites/csdocuments/Shared-Cont
 console-ports:
   - name: Serial
     type: de-9
-  - name: VGA
-    type: other
 power-ports:
   - name: Power 1
     type: iec-60320-c14

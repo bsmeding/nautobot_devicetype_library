@@ -1,6 +1,7 @@
 ---
 manufacturer: Synology
 model: RS2416RP+
+slug: synology-rs2416rp-plus
 part_number: RS2416RP+
 u_height: 2
 is_full_depth: true
@@ -13,7 +14,6 @@ comments: '[Synology RS2416RP+ Data Sheet](https://global.synologydownload.com/d
 console-ports:
   - name: Console
     type: de-9
-    mgmt_only: true
 interfaces:
   - name: LAN 1
     type: 1000base-t
@@ -25,6 +25,7 @@ interfaces:
     type: 1000base-t
 module-bays:
   - name: PCIe Expansion
+    position: PCIe1
   - name: PSU 1
     position: PSU1
   - name: PSU 2

@@ -1,6 +1,7 @@
 ---
 manufacturer: Server Technology
 model: C2WG24SN-YCLN5D6 (Primary)
+slug: server-technology-c2wg24sn-ycln5d6
 part_number: C2WG24SN-YCLN5D6
 u_height: 2
 is_full_depth: true
@@ -20,7 +21,6 @@ console-server-ports:
   - name: link
     label: LINK
     type: rj-12
-    poe: true
 power-ports:
   - name: Power Port 1
     type: nema-l21-30p

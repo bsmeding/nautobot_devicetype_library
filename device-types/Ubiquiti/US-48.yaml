@@ -1,6 +1,7 @@
 ---
 manufacturer: Ubiquiti
 model: UniFi Switch 48 Gen1
+slug: ubiquiti-unifi-switch-48-gen1
 part_number: US-48
 comments: |
   UniFi Switch 48 Gen1, non-PoE, (48) Gigabit, (2) SFP+, (2) SFP
@@ -8,6 +9,11 @@ comments: |
   Dimensions: 443 x 43 x 286 mm (17.44 x 1.69 x 11.26")
 u_height: 1
 is_full_depth: false
+weight: 3.65
+weight_unit: kg
+airflow: front-to-rear
+front_image: true
+rear_image: false
 interfaces:
   - name: Port 1
     type: 1000base-t

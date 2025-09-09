@@ -1,10 +1,13 @@
 ---
 manufacturer: HPE
 model: Aruba 3810M 48G PoeP 1-slot
+slug: hpe-aruba-3810m-48g-poep-1-slot
 part_number: JL074A
 u_height: 1
 airflow: front-to-rear
 is_full_depth: false
+front_image: true
+rear_image: true
 comments: '[Aruba 3810 Switch Series Datasheet](https://www.arubanetworks.com/assets/ds/DS_3810SwitchSeries.pdf)'
 weight: 6.18
 weight_unit: kg
@@ -12,6 +15,7 @@ module-bays:
   - name: Network Module
     position: A
   - name: Stacking Module
+    position: Stack
   - name: PS1
     position: '1'
   - name: PS2

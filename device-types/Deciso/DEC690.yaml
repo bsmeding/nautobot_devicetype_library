@@ -2,6 +2,7 @@
 manufacturer: Deciso
 model: DEC690
 part_number: DEC690
+slug: deciso-dec690
 is_full_depth: false
 u_height: 1
 interfaces:

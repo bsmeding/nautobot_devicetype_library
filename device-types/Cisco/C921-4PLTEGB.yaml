@@ -1,7 +1,8 @@
 ---
 manufacturer: Cisco
-model: C921-4PLTEGB
+model: Catalyst 921-4PLTEGB
 part_number: C921-4PLTEGB
+slug: cisco-c921-4pltegb
 comments: (Cisco 900 Series Integrated Services Routers Data Sheet)[https://www.cisco.com/c/en/us/products/collateral/routers/900-series-integrated-services-routers-isr/datasheet-c78-741615.html]
 u_height: 1
 is_full_depth: false
@@ -11,7 +12,6 @@ airflow: passive
 console-ports:
   - name: con0
     type: rj-45
-    mgmt_only: true
 interfaces:
   - name: Cellular0
     type: lte

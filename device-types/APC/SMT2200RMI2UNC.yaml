@@ -1,6 +1,7 @@
 ---
 manufacturer: APC
 model: SMT2200RMI2UNC
+slug: apc-smt2200rmi2unc
 part_number: SMT2200RMI2UNC
 u_height: 2
 is_full_depth: true
@@ -44,3 +45,4 @@ power-outlets:
     power_port: Source
 module-bays:
   - name: SmartSlot
+    position: SmartSlot

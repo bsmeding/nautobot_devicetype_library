@@ -1,6 +1,7 @@
 ---
 manufacturer: Huawei
 model: CloudEngine S5732-H48XUM2CC
+slug: huawei-cloudengine-s5732-h48xum2cc
 part_number: 02353MLH
 u_height: 1.0
 is_full_depth: false
@@ -170,7 +171,12 @@ interfaces:
     type: 40gbase-x-qsfpp
 module-bays:
   - name: FAN1
+    position: '1'
   - name: FAN2
+    position: '2'
   - name: PWR1
+    position: '1'
   - name: PWR2
+    position: '2'
   - name: RearCardSlot
+    position: '1'
