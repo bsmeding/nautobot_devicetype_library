@@ -248,8 +248,10 @@ class SyncDeviceTypes(Job):
                     pass
                 try:
                     with open(front_path, "rb") as fp:
-                        device_type.front_image.save(os.path.basename(front_path), File(fp), save=True)
-                    self.logger.info("Set DeviceType.front_image field.")
+                        # Save to the correct subdirectory that DeviceType.front_image expects
+                        filename = os.path.basename(front_path)
+                        device_type.front_image.save(f"devicetype-images/{filename}", File(fp), save=True)
+                    self.logger.info(f"Set DeviceType.front_image field: {device_type.front_image.name}")
                 except Exception as info_err:
                     self.logger.warning(f"Failed to set DeviceType.front_image: {info_err}")
 
@@ -265,8 +267,10 @@ class SyncDeviceTypes(Job):
                     pass
                 try:
                     with open(rear_path, "rb") as rp:
-                        device_type.rear_image.save(os.path.basename(rear_path), File(rp), save=True)
-                    self.logger.info("Set DeviceType.rear_image field.")
+                        # Save to the correct subdirectory that DeviceType.rear_image expects
+                        filename = os.path.basename(rear_path)
+                        device_type.rear_image.save(f"devicetype-images/{filename}", File(rp), save=True)
+                    self.logger.info(f"Set DeviceType.rear_image field: {device_type.rear_image.name}")
                 except Exception as info_err:
                     self.logger.warning(f"Failed to set DeviceType.rear_image: {info_err}")
 
@@ -278,20 +282,21 @@ class SyncDeviceTypes(Job):
             ImageAttachment.objects.filter(content_type=ct, object_id=device_type.id, name__icontains=name_suffix).delete()
         except Exception:
             pass
-        with open(image_path, "rb") as fh:
-            img = ImageAttachment.objects.create(
-                content_type=ct,
-                object_id=device_type.id,
-                name=f"{device_type.manufacturer.name} {device_type.model} {name_suffix}",
-                image=ImageFile(fh, name=os.path.basename(image_path)),
-            )
         try:
+            with open(image_path, "rb") as fh:
+                img = ImageAttachment.objects.create(
+                    content_type=ct,
+                    object_id=device_type.id,
+                    name=f"{device_type.manufacturer.name} {device_type.model} {name_suffix}",
+                    image=ImageFile(fh, name=os.path.basename(image_path)),
+                )
             saved_path = img.image.path
             exists = os.path.exists(saved_path)
             url = getattr(img.image, "url", None)
             self.logger.info(f"Attachment stored at: {saved_path} (exists={exists}) url={url}")
-        except Exception as info_err:
-            self.logger.warning(f"Unable to resolve stored attachment path/url: {info_err}")
+        except Exception as img_err:
+            self.logger.error(f"Failed to create ImageAttachment: {img_err}")
+            raise
 
     def _find_elevation_image_paths(self, images_dir, manufacturer_name, model_name):
         """Return (front_path, rear_path) for the given manufacturer/model if found.
