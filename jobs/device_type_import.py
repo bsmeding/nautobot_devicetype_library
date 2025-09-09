@@ -17,6 +17,7 @@ from nautobot.dcim.models import (
 )
 from nautobot.extras.models import ImageAttachment
 from django.core.files.base import File
+from django.core.files.images import ImageFile
 from django.contrib.contenttypes.models import ContentType
 
 # Set the relative path to the device types folder
@@ -235,40 +236,32 @@ class SyncDeviceTypes(Job):
                 self.log_info(f"[Dry-run] Would attach REAR image: {rear_path}")
             return
 
-        # Prefer native DeviceType image fields if available; otherwise, use ImageAttachment
-        has_front_field = hasattr(device_type, "front_image")
-        has_rear_field = hasattr(device_type, "rear_image")
-
+        # Always use ImageAttachment for reliability across deployments
         # Attach FRONT
         if front_path:
-            if has_front_field:
-                # Replace existing image if present
-                try:
-                    if getattr(device_type, "front_image"):
-                        device_type.front_image.delete(save=False)
-                except Exception:
-                    pass
-                with open(front_path, "rb") as fp:
-                    device_type.front_image.save(os.path.basename(front_path), File(fp), save=True)
-                self.log_success(f"Attached FRONT image to {manufacturer_name} {model_name}.")
-            else:
-                self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
-                self.log_success(f"Attached FRONT image (as attachment) to {manufacturer_name} {model_name}.")
+            self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
+            self.log_success(f"Attached FRONT image (as attachment) to {manufacturer_name} {model_name}.")
+            # Clear any model field to avoid stale/broken links in UI
+            try:
+                if hasattr(device_type, "front_image") and getattr(device_type, "front_image"):
+                    device_type.front_image.delete(save=False)
+                    device_type.front_image = None
+                    device_type.save()
+            except Exception:
+                pass
 
         # Attach REAR
         if rear_path:
-            if has_rear_field:
-                try:
-                    if getattr(device_type, "rear_image"):
-                        device_type.rear_image.delete(save=False)
-                except Exception:
-                    pass
-                with open(rear_path, "rb") as rp:
-                    device_type.rear_image.save(os.path.basename(rear_path), File(rp), save=True)
-                self.log_success(f"Attached REAR image to {manufacturer_name} {model_name}.")
-            else:
-                self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
-                self.log_success(f"Attached REAR image (as attachment) to {manufacturer_name} {model_name}.")
+            self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
+            self.log_success(f"Attached REAR image (as attachment) to {manufacturer_name} {model_name}.")
+            # Clear any model field to avoid stale/broken links in UI
+            try:
+                if hasattr(device_type, "rear_image") and getattr(device_type, "rear_image"):
+                    device_type.rear_image.delete(save=False)
+                    device_type.rear_image = None
+                    device_type.save()
+            except Exception:
+                pass
 
     def _attach_with_imageattachment(self, device_type, image_path, name_suffix):
         """Create or replace an ImageAttachment for the given object."""
@@ -279,12 +272,19 @@ class SyncDeviceTypes(Job):
         except Exception:
             pass
         with open(image_path, "rb") as fh:
-            ImageAttachment.objects.create(
+            img = ImageAttachment.objects.create(
                 content_type=ct,
                 object_id=device_type.id,
                 name=f"{device_type.manufacturer.name} {device_type.model} {name_suffix}",
-                image=File(fh, name=os.path.basename(image_path)),
+                image=ImageFile(fh, name=os.path.basename(image_path)),
             )
+        try:
+            saved_path = img.image.path
+            exists = os.path.exists(saved_path)
+            url = getattr(img.image, "url", None)
+            self.log_info(f"Attachment stored at: {saved_path} (exists={exists}) url={url}")
+        except Exception as info_err:
+            self.log_warning(f"Unable to resolve stored attachment path/url: {info_err}")
 
     def _find_elevation_image_paths(self, images_dir, manufacturer_name, model_name):
         """Return (front_path, rear_path) for the given manufacturer/model if found.
