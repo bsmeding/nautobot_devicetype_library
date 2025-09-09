@@ -236,32 +236,39 @@ class SyncDeviceTypes(Job):
                 self.logger.info(f"[Dry-run] Would attach REAR image: {rear_path}")
             return
 
-        # Always use ImageAttachment for reliability across deployments
-        # Attach FRONT
+        # Attach FRONT: create attachment and set model field if available
         if front_path:
             self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
             self.logger.info(f"Attached FRONT image (as attachment) to {manufacturer_name} {model_name}.")
-            # Clear any model field to avoid stale/broken links in UI
-            try:
-                if hasattr(device_type, "front_image") and getattr(device_type, "front_image"):
-                    device_type.front_image.delete(save=False)
-                    device_type.front_image = None
-                    device_type.save()
-            except Exception:
-                pass
+            if hasattr(device_type, "front_image"):
+                try:
+                    if getattr(device_type, "front_image"):
+                        device_type.front_image.delete(save=False)
+                except Exception:
+                    pass
+                try:
+                    with open(front_path, "rb") as fp:
+                        device_type.front_image.save(os.path.basename(front_path), File(fp), save=True)
+                    self.logger.info("Set DeviceType.front_image field.")
+                except Exception as info_err:
+                    self.logger.warning(f"Failed to set DeviceType.front_image: {info_err}")
 
         # Attach REAR
         if rear_path:
             self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
             self.logger.info(f"Attached REAR image (as attachment) to {manufacturer_name} {model_name}.")
-            # Clear any model field to avoid stale/broken links in UI
-            try:
-                if hasattr(device_type, "rear_image") and getattr(device_type, "rear_image"):
-                    device_type.rear_image.delete(save=False)
-                    device_type.rear_image = None
-                    device_type.save()
-            except Exception:
-                pass
+            if hasattr(device_type, "rear_image"):
+                try:
+                    if getattr(device_type, "rear_image"):
+                        device_type.rear_image.delete(save=False)
+                except Exception:
+                    pass
+                try:
+                    with open(rear_path, "rb") as rp:
+                        device_type.rear_image.save(os.path.basename(rear_path), File(rp), save=True)
+                    self.logger.info("Set DeviceType.rear_image field.")
+                except Exception as info_err:
+                    self.logger.warning(f"Failed to set DeviceType.rear_image: {info_err}")
 
     def _attach_with_imageattachment(self, device_type, image_path, name_suffix):
         """Create or replace an ImageAttachment for the given object."""
