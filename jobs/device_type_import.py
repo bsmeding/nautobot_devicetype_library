@@ -363,7 +363,8 @@ class SyncDeviceTypes(Job):
         # Debug logging
         if hasattr(self, 'logger'):
             self.logger.debug(f"Looking for images: manufacturer='{manufacturer_name}' -> '{manufacturer_slug}', model='{model_name}' -> '{model_slug}'")
-            self.logger.debug(f"Available files: {list(filename_to_path.keys())}")
+            # Only show file count, not all filenames to avoid log spam
+            self.logger.debug(f"Found {len(filename_to_path)} image files in directory")
 
         # Generate base variants: original model slug and versions with common prefixes removed
         base_variants = []
@@ -406,9 +407,12 @@ class SyncDeviceTypes(Job):
         front_path = None
         rear_path = None
         
-        # Debug logging for candidate stems
+        # Debug logging for candidate stems (limit to first 10 to avoid log spam)
         if hasattr(self, 'logger'):
-            self.logger.debug(f"Trying candidate stems: {candidate_stems}")
+            stems_to_show = candidate_stems[:10] if len(candidate_stems) > 10 else candidate_stems
+            self.logger.debug(f"Trying candidate stems ({len(candidate_stems)} total): {stems_to_show}")
+            if len(candidate_stems) > 10:
+                self.logger.debug(f"... and {len(candidate_stems) - 10} more stems")
         
         for stem in candidate_stems:
             if not front_path:
