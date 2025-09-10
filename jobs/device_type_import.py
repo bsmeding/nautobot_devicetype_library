@@ -271,11 +271,24 @@ class SyncDeviceTypes(Job):
             media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
             target_dir = os.path.join(media_root, 'devicetype-images')
             
+            # Debug: Log the paths being used
+            self.logger.info(f"Media root: {media_root}")
+            self.logger.info(f"Target directory: {target_dir}")
+            self.logger.info(f"Target filename: {target_filename}")
+            
             # Ensure the target directory exists
             os.makedirs(target_dir, exist_ok=True)
             
             # Create the full target path
             target_path = os.path.join(target_dir, target_filename)
+            self.logger.info(f"Full target path: {target_path}")
+            
+            # List directory contents before operation
+            if os.path.exists(target_dir):
+                files_in_dir = os.listdir(target_dir)
+                self.logger.info(f"Files in target directory before operation: {files_in_dir}")
+            else:
+                self.logger.warning(f"Target directory does not exist: {target_dir}")
             
             # Check if target file already exists and has the same size
             if os.path.exists(target_path):
@@ -293,6 +306,13 @@ class SyncDeviceTypes(Job):
             
             # Copy the file
             shutil.copy2(source_path, target_path)
+            
+            # List directory contents after operation
+            if os.path.exists(target_dir):
+                files_in_dir = os.listdir(target_dir)
+                self.logger.info(f"Files in target directory after operation: {files_in_dir}")
+            else:
+                self.logger.warning(f"Target directory does not exist after operation: {target_dir}")
             
             # Verify the copy was successful
             if os.path.exists(target_path):
@@ -475,6 +495,15 @@ class SyncDeviceTypes(Job):
                     self.logger.info(f"✅ Rear image successfully attached to {manufacturer_name} {model_name}")
                 else:
                     self.logger.error(f"❌ Rear image NOT attached to {manufacturer_name} {model_name}")
+            
+            # Final directory check
+            media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
+            target_dir = os.path.join(media_root, 'devicetype-images')
+            if os.path.exists(target_dir):
+                final_files = os.listdir(target_dir)
+                self.logger.info(f"Final directory contents: {final_files}")
+            else:
+                self.logger.warning(f"Final directory does not exist: {target_dir}")
 
     def _attach_with_imageattachment(self, device_type, image_path, name_suffix):
         """Create or replace an ImageAttachment for the given object."""
