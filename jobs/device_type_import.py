@@ -165,7 +165,7 @@ class SyncDeviceTypes(Job):
                         model_for_images = device_data.get("part_number", device_data["model"])
                         # Wrap image attachment in a transaction to ensure it's committed
                         with transaction.atomic():
-                            self._attach_elevation_images(device_type, device_data["manufacturer"], model_for_images, commit=True)
+                            self._attach_elevation_images(device_type, device_data["manufacturer"], model_for_images, commit=True, debug_mode=debug_mode)
                     except Exception as img_err:
                         self.logger.warning(f"Images not attached for {device_data['manufacturer']} {device_data['model']}: {img_err}")
 
@@ -261,7 +261,7 @@ class SyncDeviceTypes(Job):
     # ------------------------------
     # Image handling helpers
     # ------------------------------
-    def _copy_image_to_media(self, source_path, target_filename):
+    def _copy_image_to_media(self, source_path, target_filename, debug_mode=False):
         """Copy an image file directly to the media/devicetype-images/ directory.
         
         Returns the relative path to the copied file, or None if copy failed.
@@ -282,7 +282,8 @@ class SyncDeviceTypes(Job):
                 source_size = os.path.getsize(source_path)
                 target_size = os.path.getsize(target_path)
                 if source_size == target_size:
-                    self.logger.debug(f"File already exists with same size, skipping copy: {target_filename}")
+                    if debug_mode:
+                        self.logger.debug(f"File already exists with same size, skipping copy: {target_filename}")
                     return f"devicetype-images/{target_filename}"
             
             # Copy the file
@@ -305,7 +306,7 @@ class SyncDeviceTypes(Job):
         except Exception as copy_err:
             self.logger.error(f"Failed to copy image file: {copy_err}")
             return None
-    def _attach_elevation_images(self, device_type, manufacturer_name, model_name, commit):
+    def _attach_elevation_images(self, device_type, manufacturer_name, model_name, commit, debug_mode=False):
         """Attach front/rear elevation images to the given DeviceType if present on disk.
 
         Looks under elevation-images/<Manufacturer>/ for files named like
@@ -317,7 +318,7 @@ class SyncDeviceTypes(Job):
             self.logger.info(f"No elevation-images directory for manufacturer '{manufacturer_name}'. Skipping images.")
             return
 
-        front_path, rear_path = self._find_elevation_image_paths(images_dir, manufacturer_name, model_name)
+        front_path, rear_path = self._find_elevation_image_paths(images_dir, manufacturer_name, model_name, debug_mode)
 
         if not front_path and not rear_path:
             self.logger.info(f"No elevation images found for {manufacturer_name} {model_name}.")
@@ -335,7 +336,7 @@ class SyncDeviceTypes(Job):
             try:
                 # Copy the file directly to the media folder
                 filename = os.path.basename(front_path)
-                relative_path = self._copy_image_to_media(front_path, filename)
+                relative_path = self._copy_image_to_media(front_path, filename, debug_mode)
                 
                 if relative_path:
                     # Set the DeviceType field to point to the copied file
@@ -358,7 +359,7 @@ class SyncDeviceTypes(Job):
             try:
                 # Copy the file directly to the media folder
                 filename = os.path.basename(rear_path)
-                relative_path = self._copy_image_to_media(rear_path, filename)
+                relative_path = self._copy_image_to_media(rear_path, filename, debug_mode)
                 
                 if relative_path:
                     # Set the DeviceType field to point to the copied file
@@ -465,7 +466,7 @@ class SyncDeviceTypes(Job):
             self.logger.error(f"Device type: {device_type.manufacturer.name} {device_type.model}")
             raise
 
-    def _find_elevation_image_paths(self, images_dir, manufacturer_name, model_name):
+    def _find_elevation_image_paths(self, images_dir, manufacturer_name, model_name, debug_mode=False):
         """Return (front_path, rear_path) for the given manufacturer/model if found.
 
         Matches filenames in a case-insensitive way by normalizing to lowercase.
@@ -486,7 +487,7 @@ class SyncDeviceTypes(Job):
         model_slug = self._slugify(model_name)
         
         # Debug logging
-        if hasattr(self, 'logger'):
+        if debug_mode and hasattr(self, 'logger'):
             self.logger.debug(f"Looking for images: manufacturer='{manufacturer_name}' -> '{manufacturer_slug}', model='{model_name}' -> '{model_slug}'")
             self.logger.debug(f"Found {len(filename_to_path)} image files in directory")
 
@@ -532,7 +533,7 @@ class SyncDeviceTypes(Job):
         rear_path = None
         
         # Debug logging for candidate stems
-        if hasattr(self, 'logger'):
+        if debug_mode and hasattr(self, 'logger'):
             self.logger.debug(f"Trying {len(candidate_stems)} candidate stems")
         
         for stem in candidate_stems:
@@ -551,7 +552,7 @@ class SyncDeviceTypes(Job):
             if front_path and rear_path:
                 break
 
-        if hasattr(self, 'logger'):
+        if debug_mode and hasattr(self, 'logger'):
             self.logger.debug(f"Final result: front={front_path}, rear={rear_path}")
         
         return (front_path, rear_path)
