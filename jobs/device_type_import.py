@@ -279,15 +279,30 @@ class SyncDeviceTypes(Job):
             
             # Check if target file already exists and has the same size
             if os.path.exists(target_path):
-                source_size = os.path.getsize(source_path)
-                target_size = os.path.getsize(target_path)
-                if source_size == target_size:
+                try:
+                    source_size = os.path.getsize(source_path)
+                    target_size = os.path.getsize(target_path)
+                    if source_size == target_size:
+                        if debug_mode:
+                            self.logger.debug(f"File already exists with same size, skipping copy: {target_filename}")
+                        return f"devicetype-images/{target_filename}"
+                    else:
+                        if debug_mode:
+                            self.logger.debug(f"File exists but size differs: {target_filename} (source={source_size}, target={target_size})")
+                except OSError as size_err:
                     if debug_mode:
-                        self.logger.debug(f"File already exists with same size, skipping copy: {target_filename}")
-                    return f"devicetype-images/{target_filename}"
+                        self.logger.debug(f"Could not check file sizes: {size_err}")
+                    # Continue with copy attempt
             
             # Copy the file
-            shutil.copy2(source_path, target_path)
+            try:
+                shutil.copy2(source_path, target_path)
+            except PermissionError as perm_err:
+                self.logger.error(f"Permission denied copying {target_filename}: {perm_err}")
+                return None
+            except OSError as os_err:
+                self.logger.error(f"OS error copying {target_filename}: {os_err}")
+                return None
             
             # Verify the copy was successful
             if os.path.exists(target_path):
@@ -304,7 +319,11 @@ class SyncDeviceTypes(Job):
                 return None
                 
         except Exception as copy_err:
-            self.logger.error(f"Failed to copy image file: {copy_err}")
+            self.logger.error(f"Failed to copy image file {target_filename}: {copy_err}")
+            # Check if the file actually exists despite the error
+            if os.path.exists(target_path):
+                self.logger.info(f"File {target_filename} exists despite error, using existing file")
+                return f"devicetype-images/{target_filename}"
             return None
     def _attach_elevation_images(self, device_type, manufacturer_name, model_name, commit, debug_mode=False):
         """Attach front/rear elevation images to the given DeviceType if present on disk.
