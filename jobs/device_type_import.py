@@ -10,6 +10,7 @@ from nautobot.core.jobs import Job, StringVar, ChoiceVar, BooleanVar, register_j
 import os
 import yaml
 import re
+import shutil
 from nautobot.dcim.models import (
     Manufacturer, DeviceType, InterfaceTemplate, ConsolePortTemplate, ConsoleServerPortTemplate,
     PowerPortTemplate, PowerOutletTemplate, FrontPortTemplate, RearPortTemplate,
@@ -20,6 +21,7 @@ from django.core.files.base import File
 from django.core.files.images import ImageFile
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
+from django.conf import settings
 
 # Set the relative path to the device types folder
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Navigate up from jobs/
@@ -259,6 +261,43 @@ class SyncDeviceTypes(Job):
     # ------------------------------
     # Image handling helpers
     # ------------------------------
+    def _copy_image_to_media(self, source_path, target_filename):
+        """Copy an image file directly to the media/devicetype-images/ directory.
+        
+        Returns the relative path to the copied file, or None if copy failed.
+        """
+        try:
+            # Get the media root directory
+            media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
+            target_dir = os.path.join(media_root, 'devicetype-images')
+            
+            # Ensure the target directory exists
+            os.makedirs(target_dir, exist_ok=True)
+            
+            # Create the full target path
+            target_path = os.path.join(target_dir, target_filename)
+            
+            # Copy the file
+            shutil.copy2(source_path, target_path)
+            
+            # Verify the copy was successful
+            if os.path.exists(target_path):
+                copied_size = os.path.getsize(target_path)
+                source_size = os.path.getsize(source_path)
+                if copied_size == source_size:
+                    self.logger.info(f"Successfully copied image: {source_path} -> {target_path}")
+                    self.logger.info(f"File size: {copied_size} bytes")
+                    return f"devicetype-images/{target_filename}"
+                else:
+                    self.logger.error(f"File copy size mismatch: source={source_size}, copied={copied_size}")
+                    return None
+            else:
+                self.logger.error(f"File copy failed: {target_path} does not exist")
+                return None
+                
+        except Exception as copy_err:
+            self.logger.error(f"Failed to copy image file: {copy_err}")
+            return None
     def _attach_elevation_images(self, device_type, manufacturer_name, model_name, commit):
         """Attach front/rear elevation images to the given DeviceType if present on disk.
 
@@ -284,33 +323,51 @@ class SyncDeviceTypes(Job):
                 self.logger.info(f"[Dry-run] Would attach REAR image: {rear_path}")
             return
 
-        # Attach FRONT: use DeviceType.front_image field (stored in /media/devicetype-images/)
+        # Attach FRONT: copy file directly to media folder and set DeviceType.front_image field
         if front_path:
             self.logger.info(f"Attempting to attach FRONT image: {front_path}")
+            
+            # Verify source file exists and is readable
+            if not os.path.exists(front_path):
+                self.logger.error(f"Source front image file does not exist: {front_path}")
+                return
+            if not os.access(front_path, os.R_OK):
+                self.logger.error(f"Source front image file is not readable: {front_path}")
+                return
+            
+            source_size = os.path.getsize(front_path)
+            self.logger.info(f"Source front image file size: {source_size} bytes")
+            
             try:
                 # Clear existing image if any
                 if hasattr(device_type, "front_image") and device_type.front_image:
+                    self.logger.info(f"Clearing existing front image: {device_type.front_image.name}")
                     device_type.front_image.delete(save=False)
                 
-                # Use Django's proper file handling for DeviceType.front_image
-                with open(front_path, "rb") as fp:
-                    filename = os.path.basename(front_path)
-                    # Use the field's save method which handles upload_to correctly
-                    device_type.front_image.save(filename, File(fp), save=True)
+                # Copy the file directly to the media folder
+                filename = os.path.basename(front_path)
+                relative_path = self._copy_image_to_media(front_path, filename)
                 
-                # Explicitly save the device_type to ensure the image field is committed
-                device_type.save()
-                
-                self.logger.info(f"Successfully set DeviceType.front_image: {device_type.front_image.name}")
-                self.logger.info(f"Front image stored at: {device_type.front_image.path}")
-                self.logger.info(f"Front image URL: {device_type.front_image.url}")
-                
-                # Verify the image field is actually set
-                device_type.refresh_from_db()
-                if device_type.front_image:
-                    self.logger.info(f"Verification: front_image field is set to: {device_type.front_image.name}")
+                if relative_path:
+                    # Set the DeviceType field to point to the copied file
+                    device_type.front_image = relative_path
+                    device_type.save()
+                    
+                    self.logger.info(f"Successfully set DeviceType.front_image: {device_type.front_image.name}")
+                    self.logger.info(f"Front image URL: {device_type.front_image.url}")
+                    
+                    # Verify the image field is actually set
+                    device_type.refresh_from_db()
+                    if device_type.front_image:
+                        self.logger.info(f"Verification: front_image field is set to: {device_type.front_image.name}")
+                    else:
+                        self.logger.warning("Verification: front_image field is not set after save!")
                 else:
-                    self.logger.warning("Verification: front_image field is not set after save!")
+                    self.logger.error("Failed to copy front image file")
+                    # Fallback to ImageAttachment if copy fails
+                    self.logger.info("Falling back to ImageAttachment for front image")
+                    self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
+                    
             except Exception as img_err:
                 self.logger.warning(f"Failed to set DeviceType.front_image: {img_err}")
                 # Fallback to ImageAttachment if front_image field fails
@@ -320,33 +377,51 @@ class SyncDeviceTypes(Job):
             # Refresh the device type to ensure it's up to date
             device_type.refresh_from_db()
 
-        # Attach REAR: use DeviceType.rear_image field (stored in /media/devicetype-images/)
+        # Attach REAR: copy file directly to media folder and set DeviceType.rear_image field
         if rear_path:
             self.logger.info(f"Attempting to attach REAR image: {rear_path}")
+            
+            # Verify source file exists and is readable
+            if not os.path.exists(rear_path):
+                self.logger.error(f"Source rear image file does not exist: {rear_path}")
+                return
+            if not os.access(rear_path, os.R_OK):
+                self.logger.error(f"Source rear image file is not readable: {rear_path}")
+                return
+            
+            source_size = os.path.getsize(rear_path)
+            self.logger.info(f"Source rear image file size: {source_size} bytes")
+            
             try:
                 # Clear existing image if any
                 if hasattr(device_type, "rear_image") and device_type.rear_image:
+                    self.logger.info(f"Clearing existing rear image: {device_type.rear_image.name}")
                     device_type.rear_image.delete(save=False)
                 
-                # Use Django's proper file handling for DeviceType.rear_image
-                with open(rear_path, "rb") as rp:
-                    filename = os.path.basename(rear_path)
-                    # Use the field's save method which handles upload_to correctly
-                    device_type.rear_image.save(filename, File(rp), save=True)
+                # Copy the file directly to the media folder
+                filename = os.path.basename(rear_path)
+                relative_path = self._copy_image_to_media(rear_path, filename)
                 
-                # Explicitly save the device_type to ensure the image field is committed
-                device_type.save()
-                
-                self.logger.info(f"Successfully set DeviceType.rear_image: {device_type.rear_image.name}")
-                self.logger.info(f"Rear image stored at: {device_type.rear_image.path}")
-                self.logger.info(f"Rear image URL: {device_type.rear_image.url}")
-                
-                # Verify the image field is actually set
-                device_type.refresh_from_db()
-                if device_type.rear_image:
-                    self.logger.info(f"Verification: rear_image field is set to: {device_type.rear_image.name}")
+                if relative_path:
+                    # Set the DeviceType field to point to the copied file
+                    device_type.rear_image = relative_path
+                    device_type.save()
+                    
+                    self.logger.info(f"Successfully set DeviceType.rear_image: {device_type.rear_image.name}")
+                    self.logger.info(f"Rear image URL: {device_type.rear_image.url}")
+                    
+                    # Verify the image field is actually set
+                    device_type.refresh_from_db()
+                    if device_type.rear_image:
+                        self.logger.info(f"Verification: rear_image field is set to: {device_type.rear_image.name}")
+                    else:
+                        self.logger.warning("Verification: rear_image field is not set after save!")
                 else:
-                    self.logger.warning("Verification: rear_image field is not set after save!")
+                    self.logger.error("Failed to copy rear image file")
+                    # Fallback to ImageAttachment if copy fails
+                    self.logger.info("Falling back to ImageAttachment for rear image")
+                    self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
+                    
             except Exception as img_err:
                 self.logger.warning(f"Failed to set DeviceType.rear_image: {img_err}")
                 # Fallback to ImageAttachment if rear_image field fails
