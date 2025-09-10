@@ -27,13 +27,26 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Naviga
 MODULE_TYPE_PATH = os.path.join(BASE_DIR, "module-types")
 MODULE_IMAGE_PATH = os.path.join(BASE_DIR, "module-images")
 
+def get_module_manufacturer_choices():
+    """Populate the manufacturer dropdown choices dynamically with an empty default value."""
+    manufacturers = [("", "Select a manufacturer")]
+    if os.path.exists(MODULE_TYPE_PATH):
+        for folder in os.listdir(MODULE_TYPE_PATH):
+            folder_path = os.path.join(MODULE_TYPE_PATH, folder)
+            if os.path.isdir(folder_path):
+                manufacturers.append((folder, folder))
+    if len(manufacturers) == 1:
+        manufacturers.append(("", "No manufacturers found"))
+
+    return manufacturers
+
 class SyncModuleTypes(Job):
     text_filter = StringVar(
         description="Enter text to filter module types (regex supported)",
         required=False
     )
     manufacturer = ChoiceVar(
-        choices=SyncModuleTypes.get_manufacturer_choices, 
+        choices=[], 
         description="Select a manufacturer to import all module types",
         default="",
         required=False
@@ -57,18 +70,14 @@ class SyncModuleTypes(Job):
         commit_default = False
 
     @classmethod
-    def get_manufacturer_choices(cls):
-        """Populate the manufacturer dropdown choices dynamically with an empty default value."""
-        manufacturers = [("", "Select a manufacturer")]
-        if os.path.exists(MODULE_TYPE_PATH):
-            for folder in os.listdir(MODULE_TYPE_PATH):
-                folder_path = os.path.join(MODULE_TYPE_PATH, folder)
-                if os.path.isdir(folder_path):
-                    manufacturers.append((folder, folder))
-        if len(manufacturers) == 1:
-            manufacturers.append(("", "No manufacturers found"))
+    def as_form(cls, *args, **kwargs):
+        manufacturers = get_module_manufacturer_choices()
+        if manufacturers:
+            cls.manufacturer.choices = sorted(manufacturers, key=lambda x: x[1].lower())
+        else:
+            cls.manufacturer.choices = [("", "No manufacturers found")]
+        return super().as_form(*args, **kwargs)
 
-        return manufacturers
 
     def run(self, *args, **kwargs):
         """Execute the job with dynamic argument handling."""
