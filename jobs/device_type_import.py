@@ -182,6 +182,21 @@ class SyncDeviceTypes(Job):
 
 
                 self.logger.info(f"Imported device type: {device_data['model']} (Created: {created})")
+                
+                # Final verification: check if images were attached
+                if include_images:
+                    try:
+                        ct = ContentType.objects.get_for_model(device_type)
+                        attachments = ImageAttachment.objects.filter(
+                            content_type=ct,
+                            object_id=device_type.id
+                        )
+                        self.logger.info(f"Final verification: {attachments.count()} image attachments found for {device_data['model']}")
+                        for attachment in attachments:
+                            self.logger.info(f"  - {attachment.name} (ID: {attachment.id})")
+                    except Exception as verify_err:
+                        self.logger.warning(f"Final verification failed: {verify_err}")
+                        
             except Exception as e:
                 self.logger.error(f"Failed to import {file_path}: {str(e)}")
 
@@ -246,6 +261,9 @@ class SyncDeviceTypes(Job):
             self.logger.info(f"Attempting to attach FRONT image: {front_path}")
             self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
             self.logger.info(f"Successfully attached FRONT image to {manufacturer_name} {model_name}.")
+            
+            # Refresh the device type to ensure it's up to date
+            device_type.refresh_from_db()
             # TODO: Fix double path issue with DeviceType.front_image
             # The ImageAttachment approach works perfectly, so we'll use that for now
             # if hasattr(device_type, "front_image"):
@@ -268,6 +286,9 @@ class SyncDeviceTypes(Job):
             self.logger.info(f"Attempting to attach REAR image: {rear_path}")
             self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
             self.logger.info(f"Successfully attached REAR image to {manufacturer_name} {model_name}.")
+            
+            # Refresh the device type to ensure it's up to date
+            device_type.refresh_from_db()
             # TODO: Fix double path issue with DeviceType.rear_image
             # The ImageAttachment approach works perfectly, so we'll use that for now
             # if hasattr(device_type, "rear_image"):
@@ -326,13 +347,35 @@ class SyncDeviceTypes(Job):
             self.logger.info(f"Attachment created successfully:")
             self.logger.info(f"  - ID: {img.id}")
             self.logger.info(f"  - Name: {img.name}")
+            self.logger.info(f"  - Content Type: {img.content_type}")
+            self.logger.info(f"  - Object ID: {img.object_id}")
+            self.logger.info(f"  - Device Type ID: {device_type.id}")
             self.logger.info(f"  - Stored at: {saved_path}")
             self.logger.info(f"  - File exists: {exists}")
             self.logger.info(f"  - File size: {file_size} bytes")
             self.logger.info(f"  - URL: {url}")
             
+            # Verify the attachment is properly linked to the device type
+            if img.content_type != ct:
+                self.logger.warning(f"Content type mismatch: expected {ct}, got {img.content_type}")
+            if img.object_id != device_type.id:
+                self.logger.warning(f"Object ID mismatch: expected {device_type.id}, got {img.object_id}")
+            
             if not exists:
                 self.logger.warning(f"Image file was not saved to expected location: {saved_path}")
+            
+            # Test if we can query the attachment back
+            try:
+                test_query = ImageAttachment.objects.filter(
+                    content_type=ct,
+                    object_id=device_type.id,
+                    name__icontains=name_suffix
+                )
+                self.logger.info(f"  - Query test: Found {test_query.count()} matching attachments")
+                if test_query.exists():
+                    self.logger.info(f"  - Query test: First attachment ID: {test_query.first().id}")
+            except Exception as query_err:
+                self.logger.warning(f"Query test failed: {query_err}")
                 
         except Exception as img_err:
             self.logger.error(f"Failed to create ImageAttachment: {img_err}")
