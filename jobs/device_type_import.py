@@ -58,6 +58,36 @@ class SyncDeviceTypes(Job):
         description = "Import device types from the local Nautobot Git repository with dry-run and debug options."
         job_class_name = "SyncDeviceTypes"
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate manufacturer choices from YAML files
+        self._populate_manufacturer_choices()
+
+    def _populate_manufacturer_choices(self):
+        """Populate manufacturer choices from available YAML files."""
+        manufacturers = set()
+        
+        if os.path.exists(DEVICE_TYPE_PATH):
+            for root, dirs, files in os.walk(DEVICE_TYPE_PATH):
+                for file in files:
+                    if file.endswith('.yaml') or file.endswith('.yml'):
+                        file_path = os.path.join(root, file)
+                        try:
+                            with open(file_path, 'r') as f:
+                                data = yaml.safe_load(f)
+                            
+                            if isinstance(data, list):
+                                for device_data in data:
+                                    if isinstance(device_data, dict) and 'manufacturer' in device_data:
+                                        manufacturers.add(device_data['manufacturer'])
+                        except Exception as e:
+                            # Skip files that can't be read
+                            continue
+        
+        # Update the manufacturer choices
+        manufacturer_choices = [("", "All Manufacturers")] + [(m, m) for m in sorted(manufacturers)]
+        self.fields['manufacturer'].choices = manufacturer_choices
+
     def run(self, *args, **kwargs):
         """Execute the job with dynamic argument handling."""
         debug_mode = kwargs.get("debug_mode", False)

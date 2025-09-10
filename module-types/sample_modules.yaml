@@ -1,0 +1,34 @@
+# Sample Module Types for Nautobot
+# This file demonstrates the structure for importing module types
+
+- manufacturer: "Cisco"
+  model: "C9300-NM-8X"
+  part_number: "C9300-NM-8X"
+  description: "Cisco Catalyst 9300 8-Port 10G Network Module"
+  weight: 0.5
+  weight_unit: "kg"
+  is_full_depth: false
+
+- manufacturer: "Cisco"
+  model: "C9300-NM-4M"
+  part_number: "C9300-NM-4M"
+  description: "Cisco Catalyst 9300 4-Port 1G Network Module"
+  weight: 0.3
+  weight_unit: "kg"
+  is_full_depth: false
+
+- manufacturer: "Juniper"
+  model: "EX4300-48MP"
+  part_number: "EX4300-48MP"
+  description: "Juniper EX4300 48-Port PoE+ Module"
+  weight: 0.8
+  weight_unit: "kg"
+  is_full_depth: true
+
+- manufacturer: "Arista"
+  model: "DCS-7280SR3-48YC8"
+  part_number: "DCS-7280SR3-48YC8"
+  description: "Arista 7280SR3 48-Port 25G SFP28 Module"
+  weight: 1.2
+  weight_unit: "kg"
+  is_full_depth: true

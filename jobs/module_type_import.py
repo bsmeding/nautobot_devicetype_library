@@ -33,7 +33,7 @@ class SyncModuleTypes(Job):
         required=False
     )
     manufacturer = ChoiceVar(
-        choices=[], 
+        choices=SyncModuleTypes.get_manufacturer_choices, 
         description="Select a manufacturer to import all module types",
         default="",
         required=False
@@ -55,6 +55,20 @@ class SyncModuleTypes(Job):
         name = "Import Module Types"
         description = "Import module types from YAML files"
         commit_default = False
+
+    @classmethod
+    def get_manufacturer_choices(cls):
+        """Populate the manufacturer dropdown choices dynamically with an empty default value."""
+        manufacturers = [("", "Select a manufacturer")]
+        if os.path.exists(MODULE_TYPE_PATH):
+            for folder in os.listdir(MODULE_TYPE_PATH):
+                folder_path = os.path.join(MODULE_TYPE_PATH, folder)
+                if os.path.isdir(folder_path):
+                    manufacturers.append((folder, folder))
+        if len(manufacturers) == 1:
+            manufacturers.append(("", "No manufacturers found"))
+
+        return manufacturers
 
     def run(self, *args, **kwargs):
         """Execute the job with dynamic argument handling."""
@@ -101,6 +115,9 @@ class SyncModuleTypes(Job):
         for file_path in files_to_import:
             self.logger.info(f"Processing file: {file_path}")
             try:
+                # Extract manufacturer from folder name
+                folder_name = os.path.basename(os.path.dirname(file_path))
+                
                 with open(file_path, 'r') as f:
                     data = yaml.safe_load(f)
                 
@@ -114,7 +131,7 @@ class SyncModuleTypes(Job):
                         continue
 
                     # Apply filters
-                    if manufacturer and module_data.get("manufacturer", "").lower() != manufacturer.lower():
+                    if manufacturer and folder_name.lower() != manufacturer.lower():
                         continue
                     
                     if text_filter:
@@ -123,12 +140,12 @@ class SyncModuleTypes(Job):
                             continue
 
                     if dry_run:
-                        self.logger.info(f"[Dry-run] Would import module type: {module_data.get('manufacturer', 'Unknown')} {module_data.get('model', 'Unknown')}")
+                        self.logger.info(f"[Dry-run] Would import module type: {folder_name} {module_data.get('model', 'Unknown')}")
                         continue
 
-                    # Create or update the module type
+                    # Create or update the module type using folder name as manufacturer
                     try:
-                        module_type = self._create_or_update_module_type(module_data)
+                        module_type = self._create_or_update_module_type(module_data, folder_name)
                         self.logger.info(f"ModuleType created: {module_type.id} - {module_type.manufacturer.name} {module_type.model}")
 
                         # Attach images if requested
@@ -138,12 +155,12 @@ class SyncModuleTypes(Job):
                                 model_for_images = module_data.get("part_number", module_data["model"])
                                 # Wrap image attachment in a transaction to ensure it's committed
                                 with transaction.atomic():
-                                    self._attach_module_images(module_type, module_data["manufacturer"], model_for_images, commit=True, debug_mode=debug_mode)
+                                    self._attach_module_images(module_type, folder_name, model_for_images, commit=True, debug_mode=debug_mode)
                             except Exception as img_err:
-                                self.logger.warning(f"Images not attached for {module_data['manufacturer']} {module_data['model']}: {img_err}")
+                                self.logger.warning(f"Images not attached for {folder_name} {module_data['model']}: {img_err}")
 
                     except Exception as e:
-                        self.logger.error(f"Failed to create/update module type {module_data.get('manufacturer', 'Unknown')} {module_data.get('model', 'Unknown')}: {e}")
+                        self.logger.error(f"Failed to create/update module type {folder_name} {module_data.get('model', 'Unknown')}: {e}")
                         continue
 
             except Exception as e:
@@ -152,12 +169,12 @@ class SyncModuleTypes(Job):
 
         self.logger.info("Module type synchronization completed.")
 
-    def _create_or_update_module_type(self, data):
+    def _create_or_update_module_type(self, data, manufacturer_name):
         """Create or update a ModuleType from the given data."""
-        # Get or create manufacturer
+        # Get or create manufacturer using the folder name
         manufacturer, created = Manufacturer.objects.get_or_create(
-            name=data["manufacturer"],
-            defaults={"slug": self._slugify(data["manufacturer"])}
+            name=manufacturer_name,
+            defaults={"slug": self._slugify(manufacturer_name)}
         )
         if created:
             self.logger.info(f"Created manufacturer: {manufacturer.name}")
