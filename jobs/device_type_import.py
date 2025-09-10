@@ -146,12 +146,24 @@ class SyncDeviceTypes(Job):
                         "subdevice_role": device_data.get("subdevice_role", "") or "",
                     }
                 )
+                
+                # Log device type creation/update
+                self.logger.info(f"DeviceType {'created' if created else 'updated'}: {device_type.id} - {device_type.manufacturer.name} {device_type.model}")
+                
+                # Check if device type already has images (for debugging)
+                if not created and include_images:
+                    if hasattr(device_type, "front_image") and device_type.front_image:
+                        self.logger.info(f"Existing front image: {device_type.front_image.name}")
+                    if hasattr(device_type, "rear_image") and device_type.rear_image:
+                        self.logger.info(f"Existing rear image: {device_type.rear_image.name}")
 
                 if include_images:
                     try:
                         # Try using part_number first, then fall back to model
                         model_for_images = device_data.get("part_number", device_data["model"])
-                        self._attach_elevation_images(device_type, device_data["manufacturer"], model_for_images, commit=True)
+                        # Wrap image attachment in a transaction to ensure it's committed
+                        with transaction.atomic():
+                            self._attach_elevation_images(device_type, device_data["manufacturer"], model_for_images, commit=True)
                     except Exception as img_err:
                         self.logger.warning(f"Images not attached for {device_data['manufacturer']} {device_data['model']}: {img_err}")
 
@@ -285,9 +297,20 @@ class SyncDeviceTypes(Job):
                     filename = os.path.basename(front_path)
                     # Use the field's save method which handles upload_to correctly
                     device_type.front_image.save(filename, File(fp), save=True)
+                
+                # Explicitly save the device_type to ensure the image field is committed
+                device_type.save()
+                
                 self.logger.info(f"Successfully set DeviceType.front_image: {device_type.front_image.name}")
                 self.logger.info(f"Front image stored at: {device_type.front_image.path}")
                 self.logger.info(f"Front image URL: {device_type.front_image.url}")
+                
+                # Verify the image field is actually set
+                device_type.refresh_from_db()
+                if device_type.front_image:
+                    self.logger.info(f"Verification: front_image field is set to: {device_type.front_image.name}")
+                else:
+                    self.logger.warning("Verification: front_image field is not set after save!")
             except Exception as img_err:
                 self.logger.warning(f"Failed to set DeviceType.front_image: {img_err}")
                 # Fallback to ImageAttachment if front_image field fails
@@ -310,17 +333,41 @@ class SyncDeviceTypes(Job):
                     filename = os.path.basename(rear_path)
                     # Use the field's save method which handles upload_to correctly
                     device_type.rear_image.save(filename, File(rp), save=True)
+                
+                # Explicitly save the device_type to ensure the image field is committed
+                device_type.save()
+                
                 self.logger.info(f"Successfully set DeviceType.rear_image: {device_type.rear_image.name}")
                 self.logger.info(f"Rear image stored at: {device_type.rear_image.path}")
                 self.logger.info(f"Rear image URL: {device_type.rear_image.url}")
+                
+                # Verify the image field is actually set
+                device_type.refresh_from_db()
+                if device_type.rear_image:
+                    self.logger.info(f"Verification: rear_image field is set to: {device_type.rear_image.name}")
+                else:
+                    self.logger.warning("Verification: rear_image field is not set after save!")
             except Exception as img_err:
                 self.logger.warning(f"Failed to set DeviceType.rear_image: {img_err}")
                 # Fallback to ImageAttachment if rear_image field fails
                 self.logger.info("Falling back to ImageAttachment for rear image")
                 self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
             
-            # Refresh the device type to ensure it's up to date
+            # Final refresh and verification
             device_type.refresh_from_db()
+            
+            # Final check: verify images are actually set in the database
+            if front_path:
+                if device_type.front_image:
+                    self.logger.info(f"✅ Front image successfully attached to {manufacturer_name} {model_name}")
+                else:
+                    self.logger.error(f"❌ Front image NOT attached to {manufacturer_name} {model_name}")
+            
+            if rear_path:
+                if device_type.rear_image:
+                    self.logger.info(f"✅ Rear image successfully attached to {manufacturer_name} {model_name}")
+                else:
+                    self.logger.error(f"❌ Rear image NOT attached to {manufacturer_name} {model_name}")
 
     def _attach_with_imageattachment(self, device_type, image_path, name_suffix):
         """Create or replace an ImageAttachment for the given object."""
