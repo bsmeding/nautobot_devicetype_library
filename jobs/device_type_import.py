@@ -271,56 +271,29 @@ class SyncDeviceTypes(Job):
             media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
             target_dir = os.path.join(media_root, 'devicetype-images')
             
-            # Debug: Log the paths being used
-            self.logger.info(f"Media root: {media_root}")
-            self.logger.info(f"Target directory: {target_dir}")
-            self.logger.info(f"Target filename: {target_filename}")
-            
             # Ensure the target directory exists
             os.makedirs(target_dir, exist_ok=True)
             
             # Create the full target path
             target_path = os.path.join(target_dir, target_filename)
-            self.logger.info(f"Full target path: {target_path}")
-            
-            # List directory contents before operation
-            if os.path.exists(target_dir):
-                files_in_dir = os.listdir(target_dir)
-                self.logger.info(f"Files in target directory before operation: {files_in_dir}")
-            else:
-                self.logger.warning(f"Target directory does not exist: {target_dir}")
             
             # Check if target file already exists and has the same size
             if os.path.exists(target_path):
                 source_size = os.path.getsize(source_path)
                 target_size = os.path.getsize(target_path)
-                self.logger.info(f"Target file exists: {target_path}")
-                self.logger.info(f"Source size: {source_size} bytes, Target size: {target_size} bytes")
                 if source_size == target_size:
-                    self.logger.info(f"Target file already exists with same size, skipping copy: {target_path}")
+                    self.logger.debug(f"File already exists with same size, skipping copy: {target_filename}")
                     return f"devicetype-images/{target_filename}"
-                else:
-                    self.logger.info(f"Target file exists but size differs, overwriting: {target_path}")
-            else:
-                self.logger.info(f"Target file does not exist, will copy: {target_path}")
             
             # Copy the file
             shutil.copy2(source_path, target_path)
-            
-            # List directory contents after operation
-            if os.path.exists(target_dir):
-                files_in_dir = os.listdir(target_dir)
-                self.logger.info(f"Files in target directory after operation: {files_in_dir}")
-            else:
-                self.logger.warning(f"Target directory does not exist after operation: {target_dir}")
             
             # Verify the copy was successful
             if os.path.exists(target_path):
                 copied_size = os.path.getsize(target_path)
                 source_size = os.path.getsize(source_path)
                 if copied_size == source_size:
-                    self.logger.info(f"Successfully copied image: {source_path} -> {target_path}")
-                    self.logger.info(f"File size: {copied_size} bytes")
+                    self.logger.info(f"Successfully copied image: {target_filename} ({copied_size} bytes)")
                     return f"devicetype-images/{target_filename}"
                 else:
                     self.logger.error(f"File copy size mismatch: source={source_size}, copied={copied_size}")
@@ -359,25 +332,7 @@ class SyncDeviceTypes(Job):
 
         # Attach FRONT: copy file directly to media folder and set DeviceType.front_image field
         if front_path:
-            self.logger.info(f"Attempting to attach FRONT image: {front_path}")
-            
-            # Verify source file exists and is readable
-            if not os.path.exists(front_path):
-                self.logger.error(f"Source front image file does not exist: {front_path}")
-                return
-            if not os.access(front_path, os.R_OK):
-                self.logger.error(f"Source front image file is not readable: {front_path}")
-                return
-            
-            source_size = os.path.getsize(front_path)
-            self.logger.info(f"Source front image file size: {source_size} bytes")
-            
             try:
-                # Clear existing image field reference (but don't delete the file)
-                if hasattr(device_type, "front_image") and device_type.front_image:
-                    self.logger.info(f"Clearing existing front image field: {device_type.front_image.name}")
-                    device_type.front_image = None
-                
                 # Copy the file directly to the media folder
                 filename = os.path.basename(front_path)
                 relative_path = self._copy_image_to_media(front_path, filename)
@@ -386,35 +341,13 @@ class SyncDeviceTypes(Job):
                     # Set the DeviceType field to point to the copied file
                     device_type.front_image = relative_path
                     device_type.save()
-                    
-                    self.logger.info(f"Successfully set DeviceType.front_image: {device_type.front_image.name}")
-                    self.logger.info(f"Front image URL: {device_type.front_image.url}")
-                    
-                    # Check if the file actually exists on disk
-                    media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
-                    full_path = os.path.join(media_root, relative_path)
-                    if os.path.exists(full_path):
-                        file_size = os.path.getsize(full_path)
-                        self.logger.info(f"✅ File exists on disk: {full_path} (size: {file_size} bytes)")
-                    else:
-                        self.logger.error(f"❌ File does NOT exist on disk: {full_path}")
-                    
-                    # Verify the image field is actually set
-                    device_type.refresh_from_db()
-                    if device_type.front_image:
-                        self.logger.info(f"Verification: front_image field is set to: {device_type.front_image.name}")
-                    else:
-                        self.logger.warning("Verification: front_image field is not set after save!")
+                    self.logger.info(f"Successfully attached front image: {filename}")
                 else:
-                    self.logger.error("Failed to copy front image file")
-                    # Fallback to ImageAttachment if copy fails
-                    self.logger.info("Falling back to ImageAttachment for front image")
+                    self.logger.warning(f"Failed to copy front image, falling back to ImageAttachment")
                     self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
                     
             except Exception as img_err:
                 self.logger.warning(f"Failed to set DeviceType.front_image: {img_err}")
-                # Fallback to ImageAttachment if front_image field fails
-                self.logger.info("Falling back to ImageAttachment for front image")
                 self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
             
             # Refresh the device type to ensure it's up to date
@@ -422,25 +355,7 @@ class SyncDeviceTypes(Job):
 
         # Attach REAR: copy file directly to media folder and set DeviceType.rear_image field
         if rear_path:
-            self.logger.info(f"Attempting to attach REAR image: {rear_path}")
-            
-            # Verify source file exists and is readable
-            if not os.path.exists(rear_path):
-                self.logger.error(f"Source rear image file does not exist: {rear_path}")
-                return
-            if not os.access(rear_path, os.R_OK):
-                self.logger.error(f"Source rear image file is not readable: {rear_path}")
-                return
-            
-            source_size = os.path.getsize(rear_path)
-            self.logger.info(f"Source rear image file size: {source_size} bytes")
-            
             try:
-                # Clear existing image field reference (but don't delete the file)
-                if hasattr(device_type, "rear_image") and device_type.rear_image:
-                    self.logger.info(f"Clearing existing rear image field: {device_type.rear_image.name}")
-                    device_type.rear_image = None
-                
                 # Copy the file directly to the media folder
                 filename = os.path.basename(rear_path)
                 relative_path = self._copy_image_to_media(rear_path, filename)
@@ -449,61 +364,29 @@ class SyncDeviceTypes(Job):
                     # Set the DeviceType field to point to the copied file
                     device_type.rear_image = relative_path
                     device_type.save()
-                    
-                    self.logger.info(f"Successfully set DeviceType.rear_image: {device_type.rear_image.name}")
-                    self.logger.info(f"Rear image URL: {device_type.rear_image.url}")
-                    
-                    # Check if the file actually exists on disk
-                    media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
-                    full_path = os.path.join(media_root, relative_path)
-                    if os.path.exists(full_path):
-                        file_size = os.path.getsize(full_path)
-                        self.logger.info(f"✅ File exists on disk: {full_path} (size: {file_size} bytes)")
-                    else:
-                        self.logger.error(f"❌ File does NOT exist on disk: {full_path}")
-                    
-                    # Verify the image field is actually set
-                    device_type.refresh_from_db()
-                    if device_type.rear_image:
-                        self.logger.info(f"Verification: rear_image field is set to: {device_type.rear_image.name}")
-                    else:
-                        self.logger.warning("Verification: rear_image field is not set after save!")
+                    self.logger.info(f"Successfully attached rear image: {filename}")
                 else:
-                    self.logger.error("Failed to copy rear image file")
-                    # Fallback to ImageAttachment if copy fails
-                    self.logger.info("Falling back to ImageAttachment for rear image")
+                    self.logger.warning(f"Failed to copy rear image, falling back to ImageAttachment")
                     self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
                     
             except Exception as img_err:
                 self.logger.warning(f"Failed to set DeviceType.rear_image: {img_err}")
-                # Fallback to ImageAttachment if rear_image field fails
-                self.logger.info("Falling back to ImageAttachment for rear image")
                 self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
             
             # Final refresh and verification
             device_type.refresh_from_db()
             
-            # Final check: verify images are actually set in the database
-            if front_path:
-                if device_type.front_image:
-                    self.logger.info(f"✅ Front image successfully attached to {manufacturer_name} {model_name}")
-                else:
-                    self.logger.error(f"❌ Front image NOT attached to {manufacturer_name} {model_name}")
+            # Log summary of attached images
+            attached_images = []
+            if device_type.front_image:
+                attached_images.append("front")
+            if device_type.rear_image:
+                attached_images.append("rear")
             
-            if rear_path:
-                if device_type.rear_image:
-                    self.logger.info(f"✅ Rear image successfully attached to {manufacturer_name} {model_name}")
-                else:
-                    self.logger.error(f"❌ Rear image NOT attached to {manufacturer_name} {model_name}")
-            
-            # Final directory check
-            media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
-            target_dir = os.path.join(media_root, 'devicetype-images')
-            if os.path.exists(target_dir):
-                final_files = os.listdir(target_dir)
-                self.logger.info(f"Final directory contents: {final_files}")
+            if attached_images:
+                self.logger.info(f"Successfully attached {', '.join(attached_images)} image(s) to {manufacturer_name} {model_name}")
             else:
-                self.logger.warning(f"Final directory does not exist: {target_dir}")
+                self.logger.warning(f"No images were attached to {manufacturer_name} {model_name}")
 
     def _attach_with_imageattachment(self, device_type, image_path, name_suffix):
         """Create or replace an ImageAttachment for the given object."""
@@ -605,7 +488,6 @@ class SyncDeviceTypes(Job):
         # Debug logging
         if hasattr(self, 'logger'):
             self.logger.debug(f"Looking for images: manufacturer='{manufacturer_name}' -> '{manufacturer_slug}', model='{model_name}' -> '{model_slug}'")
-            # Only show file count, not all filenames to avoid log spam
             self.logger.debug(f"Found {len(filename_to_path)} image files in directory")
 
         # Generate base variants: original model slug and versions with common prefixes removed
@@ -649,12 +531,9 @@ class SyncDeviceTypes(Job):
         front_path = None
         rear_path = None
         
-        # Debug logging for candidate stems (limit to first 10 to avoid log spam)
+        # Debug logging for candidate stems
         if hasattr(self, 'logger'):
-            stems_to_show = candidate_stems[:10] if len(candidate_stems) > 10 else candidate_stems
-            self.logger.debug(f"Trying candidate stems ({len(candidate_stems)} total): {stems_to_show}")
-            if len(candidate_stems) > 10:
-                self.logger.debug(f"... and {len(candidate_stems) - 10} more stems")
+            self.logger.debug(f"Trying {len(candidate_stems)} candidate stems")
         
         for stem in candidate_stems:
             if not front_path:
@@ -662,16 +541,12 @@ class SyncDeviceTypes(Job):
                     key = f"{stem}.front.{ext}"
                     if key in filename_to_path:
                         front_path = filename_to_path[key]
-                        if hasattr(self, 'logger'):
-                            self.logger.debug(f"Found front image: {key} -> {front_path}")
                         break
             if not rear_path:
                 for ext in extensions:
                     key = f"{stem}.rear.{ext}"
                     if key in filename_to_path:
                         rear_path = filename_to_path[key]
-                        if hasattr(self, 'logger'):
-                            self.logger.debug(f"Found rear image: {key} -> {rear_path}")
                         break
             if front_path and rear_path:
                 break
