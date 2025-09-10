@@ -19,6 +19,7 @@ from nautobot.extras.models import ImageAttachment
 from django.core.files.base import File
 from django.core.files.images import ImageFile
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 
 # Set the relative path to the device types folder
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Navigate up from jobs/
@@ -113,7 +114,9 @@ class SyncDeviceTypes(Job):
                         if not images_dir:
                             self.logger.info("[Dry-run] No elevation-images directory for manufacturer")
                             continue
-                        front_path, rear_path = self._find_elevation_image_paths(images_dir, dd["manufacturer"], dd["model"])
+                        # Try using part_number first, then fall back to model
+                        model_for_images = dd.get("part_number", dd["model"])
+                        front_path, rear_path = self._find_elevation_image_paths(images_dir, dd["manufacturer"], model_for_images)
                         if front_path:
                             self.logger.info(f"[Dry-run] Would attach FRONT image: {front_path}")
                         if rear_path:
@@ -146,7 +149,9 @@ class SyncDeviceTypes(Job):
 
                 if include_images:
                     try:
-                        self._attach_elevation_images(device_type, device_data["manufacturer"], device_data["model"], commit=True)
+                        # Try using part_number first, then fall back to model
+                        model_for_images = device_data.get("part_number", device_data["model"])
+                        self._attach_elevation_images(device_type, device_data["manufacturer"], model_for_images, commit=True)
                     except Exception as img_err:
                         self.logger.warning(f"Images not attached for {device_data['manufacturer']} {device_data['model']}: {img_err}")
 
@@ -238,41 +243,47 @@ class SyncDeviceTypes(Job):
 
         # Attach FRONT: create attachment and set model field if available
         if front_path:
+            self.logger.info(f"Attempting to attach FRONT image: {front_path}")
             self._attach_with_imageattachment(device_type, front_path, name_suffix="front elevation")
-            self.logger.info(f"Attached FRONT image (as attachment) to {manufacturer_name} {model_name}.")
-            if hasattr(device_type, "front_image"):
-                try:
-                    if getattr(device_type, "front_image"):
-                        device_type.front_image.delete(save=False)
-                except Exception:
-                    pass
-                try:
-                    with open(front_path, "rb") as fp:
-                        # Save to the correct subdirectory that DeviceType.front_image expects
-                        filename = os.path.basename(front_path)
-                        device_type.front_image.save(f"devicetype-images/{filename}", File(fp), save=True)
-                    self.logger.info(f"Set DeviceType.front_image field: {device_type.front_image.name}")
-                except Exception as info_err:
-                    self.logger.warning(f"Failed to set DeviceType.front_image: {info_err}")
+            self.logger.info(f"Successfully attached FRONT image to {manufacturer_name} {model_name}.")
+            # TODO: Fix double path issue with DeviceType.front_image
+            # The ImageAttachment approach works perfectly, so we'll use that for now
+            # if hasattr(device_type, "front_image"):
+            #     try:
+            #         # Clear existing image if any
+            #         if getattr(device_type, "front_image"):
+            #             device_type.front_image.delete(save=False)
+            #         
+            #         # Use Django's proper file handling
+            #         with open(front_path, "rb") as fp:
+            #             filename = os.path.basename(front_path)
+            #             # Use the field's save method which handles upload_to correctly
+            #             device_type.front_image.save(filename, File(fp), save=True)
+            #         self.logger.info(f"Set DeviceType.front_image field: {device_type.front_image.name}")
+            #     except Exception as info_err:
+            #         self.logger.warning(f"Failed to set DeviceType.front_image: {info_err}")
 
         # Attach REAR
         if rear_path:
+            self.logger.info(f"Attempting to attach REAR image: {rear_path}")
             self._attach_with_imageattachment(device_type, rear_path, name_suffix="rear elevation")
-            self.logger.info(f"Attached REAR image (as attachment) to {manufacturer_name} {model_name}.")
-            if hasattr(device_type, "rear_image"):
-                try:
-                    if getattr(device_type, "rear_image"):
-                        device_type.rear_image.delete(save=False)
-                except Exception:
-                    pass
-                try:
-                    with open(rear_path, "rb") as rp:
-                        # Save to the correct subdirectory that DeviceType.rear_image expects
-                        filename = os.path.basename(rear_path)
-                        device_type.rear_image.save(f"devicetype-images/{filename}", File(rp), save=True)
-                    self.logger.info(f"Set DeviceType.rear_image field: {device_type.rear_image.name}")
-                except Exception as info_err:
-                    self.logger.warning(f"Failed to set DeviceType.rear_image: {info_err}")
+            self.logger.info(f"Successfully attached REAR image to {manufacturer_name} {model_name}.")
+            # TODO: Fix double path issue with DeviceType.rear_image
+            # The ImageAttachment approach works perfectly, so we'll use that for now
+            # if hasattr(device_type, "rear_image"):
+            #     try:
+            #         # Clear existing image if any
+            #         if getattr(device_type, "rear_image"):
+            #             device_type.rear_image.delete(save=False)
+            #         
+            #         # Use Django's proper file handling
+            #         with open(rear_path, "rb") as rp:
+            #             filename = os.path.basename(rear_path)
+            #             # Use the field's save method which handles upload_to correctly
+            #             device_type.rear_image.save(filename, File(rp), save=True)
+            #         self.logger.info(f"Set DeviceType.rear_image field: {device_type.rear_image.name}")
+            #     except Exception as info_err:
+            #         self.logger.warning(f"Failed to set DeviceType.rear_image: {info_err}")
 
     def _attach_with_imageattachment(self, device_type, image_path, name_suffix):
         """Create or replace an ImageAttachment for the given object."""
@@ -282,20 +293,51 @@ class SyncDeviceTypes(Job):
             ImageAttachment.objects.filter(content_type=ct, object_id=device_type.id, name__icontains=name_suffix).delete()
         except Exception:
             pass
+        
+        # Verify the source image file exists and is readable
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Source image file not found: {image_path}")
+        
+        if not os.access(image_path, os.R_OK):
+            raise PermissionError(f"Cannot read source image file: {image_path}")
+        
         try:
-            with open(image_path, "rb") as fh:
+            # Create a Django File object directly from the file path
+            django_file = File(open(image_path, "rb"), name=os.path.basename(image_path))
+            
+            # Use a transaction to ensure the attachment is properly saved
+            with transaction.atomic():
                 img = ImageAttachment.objects.create(
                     content_type=ct,
                     object_id=device_type.id,
                     name=f"{device_type.manufacturer.name} {device_type.model} {name_suffix}",
-                    image=ImageFile(fh, name=os.path.basename(image_path)),
+                    image=django_file,
                 )
+            
+            # Close the file handle
+            django_file.close()
+                
+            # Verify the attachment was created and saved
             saved_path = img.image.path
             exists = os.path.exists(saved_path)
             url = getattr(img.image, "url", None)
-            self.logger.info(f"Attachment stored at: {saved_path} (exists={exists}) url={url}")
+            file_size = os.path.getsize(saved_path) if exists else 0
+            
+            self.logger.info(f"Attachment created successfully:")
+            self.logger.info(f"  - ID: {img.id}")
+            self.logger.info(f"  - Name: {img.name}")
+            self.logger.info(f"  - Stored at: {saved_path}")
+            self.logger.info(f"  - File exists: {exists}")
+            self.logger.info(f"  - File size: {file_size} bytes")
+            self.logger.info(f"  - URL: {url}")
+            
+            if not exists:
+                self.logger.warning(f"Image file was not saved to expected location: {saved_path}")
+                
         except Exception as img_err:
             self.logger.error(f"Failed to create ImageAttachment: {img_err}")
+            self.logger.error(f"Source file: {image_path}")
+            self.logger.error(f"Device type: {device_type.manufacturer.name} {device_type.model}")
             raise
 
     def _find_elevation_image_paths(self, images_dir, manufacturer_name, model_name):
@@ -317,6 +359,11 @@ class SyncDeviceTypes(Job):
 
         manufacturer_slug = self._slugify(manufacturer_name)
         model_slug = self._slugify(model_name)
+        
+        # Debug logging
+        if hasattr(self, 'logger'):
+            self.logger.debug(f"Looking for images: manufacturer='{manufacturer_name}' -> '{manufacturer_slug}', model='{model_name}' -> '{model_slug}'")
+            self.logger.debug(f"Available files: {list(filename_to_path.keys())}")
 
         # Generate base variants: original model slug and versions with common prefixes removed
         base_variants = []
@@ -358,22 +405,34 @@ class SyncDeviceTypes(Job):
 
         front_path = None
         rear_path = None
+        
+        # Debug logging for candidate stems
+        if hasattr(self, 'logger'):
+            self.logger.debug(f"Trying candidate stems: {candidate_stems}")
+        
         for stem in candidate_stems:
             if not front_path:
                 for ext in extensions:
                     key = f"{stem}.front.{ext}"
                     if key in filename_to_path:
                         front_path = filename_to_path[key]
+                        if hasattr(self, 'logger'):
+                            self.logger.debug(f"Found front image: {key} -> {front_path}")
                         break
             if not rear_path:
                 for ext in extensions:
                     key = f"{stem}.rear.{ext}"
                     if key in filename_to_path:
                         rear_path = filename_to_path[key]
+                        if hasattr(self, 'logger'):
+                            self.logger.debug(f"Found rear image: {key} -> {rear_path}")
                         break
             if front_path and rear_path:
                 break
 
+        if hasattr(self, 'logger'):
+            self.logger.debug(f"Final result: front={front_path}, rear={rear_path}")
+        
         return (front_path, rear_path)
 
     def _resolve_manufacturer_images_dir(self, manufacturer_name):
