@@ -277,6 +277,16 @@ class SyncDeviceTypes(Job):
             # Create the full target path
             target_path = os.path.join(target_dir, target_filename)
             
+            # Check if target file already exists and has the same size
+            if os.path.exists(target_path):
+                source_size = os.path.getsize(source_path)
+                target_size = os.path.getsize(target_path)
+                if source_size == target_size:
+                    self.logger.info(f"Target file already exists with same size, skipping copy: {target_path}")
+                    return f"devicetype-images/{target_filename}"
+                else:
+                    self.logger.info(f"Target file exists but size differs, overwriting: {target_path}")
+            
             # Copy the file
             shutil.copy2(source_path, target_path)
             
@@ -339,10 +349,10 @@ class SyncDeviceTypes(Job):
             self.logger.info(f"Source front image file size: {source_size} bytes")
             
             try:
-                # Clear existing image if any
+                # Clear existing image field reference (but don't delete the file)
                 if hasattr(device_type, "front_image") and device_type.front_image:
-                    self.logger.info(f"Clearing existing front image: {device_type.front_image.name}")
-                    device_type.front_image.delete(save=False)
+                    self.logger.info(f"Clearing existing front image field: {device_type.front_image.name}")
+                    device_type.front_image = None
                 
                 # Copy the file directly to the media folder
                 filename = os.path.basename(front_path)
@@ -393,10 +403,10 @@ class SyncDeviceTypes(Job):
             self.logger.info(f"Source rear image file size: {source_size} bytes")
             
             try:
-                # Clear existing image if any
+                # Clear existing image field reference (but don't delete the file)
                 if hasattr(device_type, "rear_image") and device_type.rear_image:
-                    self.logger.info(f"Clearing existing rear image: {device_type.rear_image.name}")
-                    device_type.rear_image.delete(save=False)
+                    self.logger.info(f"Clearing existing rear image field: {device_type.rear_image.name}")
+                    device_type.rear_image = None
                 
                 # Copy the file directly to the media folder
                 filename = os.path.basename(rear_path)
