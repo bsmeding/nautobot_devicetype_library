@@ -281,11 +281,15 @@ class SyncDeviceTypes(Job):
             if os.path.exists(target_path):
                 source_size = os.path.getsize(source_path)
                 target_size = os.path.getsize(target_path)
+                self.logger.info(f"Target file exists: {target_path}")
+                self.logger.info(f"Source size: {source_size} bytes, Target size: {target_size} bytes")
                 if source_size == target_size:
                     self.logger.info(f"Target file already exists with same size, skipping copy: {target_path}")
                     return f"devicetype-images/{target_filename}"
                 else:
                     self.logger.info(f"Target file exists but size differs, overwriting: {target_path}")
+            else:
+                self.logger.info(f"Target file does not exist, will copy: {target_path}")
             
             # Copy the file
             shutil.copy2(source_path, target_path)
@@ -366,6 +370,15 @@ class SyncDeviceTypes(Job):
                     self.logger.info(f"Successfully set DeviceType.front_image: {device_type.front_image.name}")
                     self.logger.info(f"Front image URL: {device_type.front_image.url}")
                     
+                    # Check if the file actually exists on disk
+                    media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
+                    full_path = os.path.join(media_root, relative_path)
+                    if os.path.exists(full_path):
+                        file_size = os.path.getsize(full_path)
+                        self.logger.info(f"✅ File exists on disk: {full_path} (size: {file_size} bytes)")
+                    else:
+                        self.logger.error(f"❌ File does NOT exist on disk: {full_path}")
+                    
                     # Verify the image field is actually set
                     device_type.refresh_from_db()
                     if device_type.front_image:
@@ -419,6 +432,15 @@ class SyncDeviceTypes(Job):
                     
                     self.logger.info(f"Successfully set DeviceType.rear_image: {device_type.rear_image.name}")
                     self.logger.info(f"Rear image URL: {device_type.rear_image.url}")
+                    
+                    # Check if the file actually exists on disk
+                    media_root = getattr(settings, 'MEDIA_ROOT', '/opt/nautobot/media')
+                    full_path = os.path.join(media_root, relative_path)
+                    if os.path.exists(full_path):
+                        file_size = os.path.getsize(full_path)
+                        self.logger.info(f"✅ File exists on disk: {full_path} (size: {file_size} bytes)")
+                    else:
+                        self.logger.error(f"❌ File does NOT exist on disk: {full_path}")
                     
                     # Verify the image field is actually set
                     device_type.refresh_from_db()
