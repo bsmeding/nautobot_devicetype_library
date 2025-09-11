@@ -78,7 +78,9 @@ class SyncModuleTypes(Job):
             cls.manufacturer.choices = sorted(manufacturers, key=lambda x: x[1].lower())
         else:
             cls.manufacturer.choices = [("", "No manufacturers found")]
-        return super().as_form(*args, **kwargs)
+        form = super().as_form(*args, **kwargs)
+        form.fields["manufacturer"].choices = cls.manufacturer.choices
+        return form
 
 
     def run(self, *args, **kwargs):
