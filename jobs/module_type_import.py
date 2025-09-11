@@ -157,7 +157,7 @@ class SyncModuleTypes(Job):
                     self.logger.info(f"ModuleType created: {module_type.id} - {module_type.manufacturer.name} {module_type.model}")
 
                     # Process module components (interfaces, ports, etc.)
-                    self._process_module_components(module_type, module_data)
+                    self._process_module_components(module_type, module_data, debug_mode)
 
                 except Exception as e:
                     self.logger.error(f"Failed to create/update module type {folder_name} {module_data.get('model', 'Unknown')}: {e}")
@@ -194,7 +194,7 @@ class SyncModuleTypes(Job):
 
         return module_type
 
-    def _process_module_components(self, module_type, module_data):
+    def _process_module_components(self, module_type, module_data, debug_mode=False):
         """Process module components like interfaces, ports, etc."""
         def process_component(component_list, component_model, fields, fk_field="module_type", defaults=None):
             """Generic function to process different module components"""
@@ -215,8 +215,6 @@ class SyncModuleTypes(Job):
                 
                 # Special handling for PowerPortTemplate with power_factor
                 if component_model == PowerPortTemplate:
-                    if debug_mode:
-                        self.logger.debug(f"Processing PowerPortTemplate, filtered_data keys: {list(filtered_data.keys())}")
                     if 'power_factor' in filtered_data:
                         # Try to create with power_factor first
                         try:

@@ -186,17 +186,20 @@ class SyncDeviceTypes(Job):
                         if parent_value:
                             valid_data[parent_field] = parent_value
                         valid_data[fk_field] = device_type
+                        # Filter out any fields that are not in the fields list or defaults to avoid keyword argument errors
+                        allowed_fields = fields + [fk_field] + list(defaults.keys())
+                        filtered_data = {k: v for k, v in valid_data.items() if k in allowed_fields}
                         
                         # Special handling for PowerPortTemplate with power_factor
-                        if component_model == PowerPortTemplate and 'power_factor' in valid_data:
+                        if component_model == PowerPortTemplate and 'power_factor' in filtered_data:
                             # Try to create with power_factor first
                             try:
-                                component_model.objects.create(**valid_data)
+                                component_model.objects.create(**filtered_data)
                             except TypeError as e:
                                 if "unexpected keyword argument" in str(e) and "power_factor" in str(e):
                                     # Remove power_factor and create without it, then update via raw SQL
-                                    power_factor_value = valid_data.pop('power_factor')
-                                    obj = component_model.objects.create(**valid_data)
+                                    power_factor_value = filtered_data.pop('power_factor')
+                                    obj = component_model.objects.create(**filtered_data)
                                     # Update power_factor via raw SQL
                                     from django.db import connection
                                     with connection.cursor() as cursor:
@@ -207,7 +210,7 @@ class SyncDeviceTypes(Job):
                                 else:
                                     raise
                         else:
-                            component_model.objects.create(**valid_data)
+                            component_model.objects.create(**filtered_data)
                     self.logger.info(f"Checked {component_list} for {device_data['model']}.")
 
 
