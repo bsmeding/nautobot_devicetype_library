@@ -214,24 +214,30 @@ class SyncModuleTypes(Job):
                 filtered_data = {k: v for k, v in valid_data.items() if k in allowed_fields}
                 
                 # Special handling for PowerPortTemplate with power_factor
-                if component_model == PowerPortTemplate and 'power_factor' in filtered_data:
-                    # Try to create with power_factor first
-                    try:
+                if component_model == PowerPortTemplate:
+                    if debug_mode:
+                        self.logger.debug(f"Processing PowerPortTemplate, filtered_data keys: {list(filtered_data.keys())}")
+                    if 'power_factor' in filtered_data:
+                        # Try to create with power_factor first
+                        try:
+                            component_model.objects.create(**filtered_data)
+                        except TypeError as e:
+                            if "unexpected keyword argument" in str(e) and "power_factor" in str(e):
+                                # Remove power_factor and create without it, then update via raw SQL
+                                power_factor_value = filtered_data.pop('power_factor')
+                                obj = component_model.objects.create(**filtered_data)
+                                # Update power_factor via raw SQL
+                                from django.db import connection
+                                with connection.cursor() as cursor:
+                                    cursor.execute(
+                                        "UPDATE dcim_powerporttemplate SET power_factor = %s WHERE id = %s",
+                                        [power_factor_value, obj.id]
+                                    )
+                            else:
+                                raise
+                    else:
+                        # No power_factor in filtered_data, create normally
                         component_model.objects.create(**filtered_data)
-                    except TypeError as e:
-                        if "unexpected keyword argument" in str(e) and "power_factor" in str(e):
-                            # Remove power_factor and create without it, then update via raw SQL
-                            power_factor_value = filtered_data.pop('power_factor')
-                            obj = component_model.objects.create(**filtered_data)
-                            # Update power_factor via raw SQL
-                            from django.db import connection
-                            with connection.cursor() as cursor:
-                                cursor.execute(
-                                    "UPDATE dcim_powerporttemplate SET power_factor = %s WHERE id = %s",
-                                    [power_factor_value, obj.id]
-                                )
-                        else:
-                            raise
                 else:
                     component_model.objects.create(**filtered_data)
             self.logger.info(f"Processed {component_list} for {module_data['model']}.")
