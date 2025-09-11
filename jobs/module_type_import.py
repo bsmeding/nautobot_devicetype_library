@@ -53,8 +53,8 @@ class SyncModuleTypes(Job):
     )
 
     class Meta:
-        name = "Import Module Types"
-        description = "Import module types from YAML files"
+        name = "Sync Module Types"
+        description = "Sync module types from YAML files"
         commit_default = False
 
     @classmethod
@@ -232,7 +232,7 @@ class SyncModuleTypes(Job):
         process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
         process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
         process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
-        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"])
+        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw", "power_factor"], defaults={"power_factor": 1.0})
         process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
         process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
         process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
@@ -288,9 +288,17 @@ class SyncModuleTypes(Job):
                 shutil.copy2(source_path, target_path)
             except PermissionError as perm_err:
                 self.logger.error(f"Permission denied copying {target_filename}: {perm_err}")
+                # Check if the file exists despite the error
+                if os.path.exists(target_path):
+                    self.logger.info(f"File {target_filename} exists despite permission error, using existing file")
+                    return f"moduletype-images/{target_filename}"
                 return None
             except OSError as os_err:
                 self.logger.error(f"OS error copying {target_filename}: {os_err}")
+                # Check if the file exists despite the error
+                if os.path.exists(target_path):
+                    self.logger.info(f"File {target_filename} exists despite OS error, using existing file")
+                    return f"moduletype-images/{target_filename}"
                 return None
             
             # Verify the copy was successful

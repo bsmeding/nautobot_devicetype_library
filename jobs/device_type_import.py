@@ -300,9 +300,17 @@ class SyncDeviceTypes(Job):
                 shutil.copy2(source_path, target_path)
             except PermissionError as perm_err:
                 self.logger.error(f"Permission denied copying {target_filename}: {perm_err}")
+                # Check if the file exists despite the error
+                if os.path.exists(target_path):
+                    self.logger.info(f"File {target_filename} exists despite permission error, using existing file")
+                    return f"devicetype-images/{target_filename}"
                 return None
             except OSError as os_err:
                 self.logger.error(f"OS error copying {target_filename}: {os_err}")
+                # Check if the file exists despite the error
+                if os.path.exists(target_path):
+                    self.logger.info(f"File {target_filename} exists despite OS error, using existing file")
+                    return f"devicetype-images/{target_filename}"
                 return None
             
             # Verify the copy was successful
