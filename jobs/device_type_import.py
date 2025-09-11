@@ -142,7 +142,7 @@ class SyncDeviceTypes(Job):
                     model=device_data["model"],
                     manufacturer=manufacturer_obj,
                     defaults={
-                        "part_number": device_data.get("part_number", None),
+                        "part_number": device_data.get("part_number", ""),
                         "u_height": device_data.get("u_height", 1),
                         "is_full_depth": device_data.get("is_full_depth", True),
                         "comments": device_data.get("comments", ""),
