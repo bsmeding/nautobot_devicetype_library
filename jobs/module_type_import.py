@@ -186,33 +186,23 @@ class SyncModuleTypes(Job):
         """Create or update a ModuleType from the given data."""
         # Get or create manufacturer using the folder name
         manufacturer, created = Manufacturer.objects.get_or_create(
-            name=manufacturer_name,
-            defaults={"slug": self._slugify(manufacturer_name)}
+            name=manufacturer_name
         )
         if created:
             self.logger.info(f"Created manufacturer: {manufacturer.name}")
 
-        # Create or update module type
+        # Create or update module type with only valid fields
         module_type, created = ModuleType.objects.get_or_create(
             manufacturer=manufacturer,
             model=data["model"],
             defaults={
-                "slug": self._slugify(data["model"]),
                 "part_number": data.get("part_number", ""),
-                "description": data.get("description", ""),
-                "weight": data.get("weight"),
-                "weight_unit": data.get("weight_unit", "kg"),
-                "is_full_depth": data.get("is_full_depth", True),
             }
         )
 
         if not created:
-            # Update existing module type
+            # Update existing module type with only valid fields
             module_type.part_number = data.get("part_number", "")
-            module_type.description = data.get("description", "")
-            module_type.weight = data.get("weight")
-            module_type.weight_unit = data.get("weight_unit", "kg")
-            module_type.is_full_depth = data.get("is_full_depth", True)
             module_type.save()
 
         return module_type
