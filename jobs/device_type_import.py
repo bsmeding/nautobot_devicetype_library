@@ -188,7 +188,7 @@ class SyncDeviceTypes(Job):
                 process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
                 process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
                 process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
-                process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"])
+                process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"], defaults={"power_factor": 1.0})
                 process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
                 process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
                 process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])

@@ -13,7 +13,7 @@ import yaml
 import shutil
 from nautobot.dcim.models import (
     Manufacturer, ModuleType, InterfaceTemplate, ConsolePortTemplate, ConsoleServerPortTemplate,
-    PowerPortTemplate, PowerOutletTemplate, FrontPortTemplate, RearPortTemplate
+    PowerPortTemplate, PowerOutletTemplate, FrontPortTemplate, RearPortTemplate, ModuleBay
 )
 from nautobot.extras.models import ImageAttachment
 from django.core.files.base import File
@@ -46,10 +46,6 @@ class SyncModuleTypes(Job):
     debug_mode = BooleanVar(
         description="Enable debug mode for detailed logging",
         default=False
-    )
-    include_images = BooleanVar(
-        description="Include module images during import",
-        default=True
     )
 
     class Meta:
@@ -89,7 +85,6 @@ class SyncModuleTypes(Job):
         manufacturer = kwargs.get("manufacturer")
         text_filter = kwargs.get("text_filter")
         dry_run = kwargs.get("dry_run")
-        include_images = kwargs.get("include_images", False)
 
         self.logger.info("Starting module type synchronization...")
 
@@ -164,17 +159,6 @@ class SyncModuleTypes(Job):
                     # Process module components (interfaces, ports, etc.)
                     self._process_module_components(module_type, module_data)
 
-                    # Attach images if requested
-                    if include_images:
-                        try:
-                            # Try using part_number first, then fall back to model
-                            model_for_images = module_data.get("part_number", module_data["model"])
-                            # Wrap image attachment in a transaction to ensure it's committed
-                            with transaction.atomic():
-                                self._attach_module_images(module_type, folder_name, model_for_images, commit=True, debug_mode=debug_mode)
-                        except Exception as img_err:
-                            self.logger.warning(f"Images not attached for {folder_name} {module_data['model']}: {img_err}")
-
                 except Exception as e:
                     self.logger.error(f"Failed to create/update module type {folder_name} {module_data.get('model', 'Unknown')}: {e}")
                     continue
@@ -232,10 +216,11 @@ class SyncModuleTypes(Job):
         process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
         process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
         process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
-        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw", "power_factor"], defaults={"power_factor": 1.0})
+        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"], defaults={"power_factor": 1.0})
         process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
         process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
         process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
+        process_component("module-bays", ModuleBay, ["name", "position", "label", "description"])
 
     def _slugify(self, value):
         """Convert a string to a URL-friendly slug."""
