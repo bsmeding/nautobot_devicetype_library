@@ -227,11 +227,19 @@ class SyncModuleTypes(Job):
                     if 'power_factor' in filtered_data:
                         # Try to create with power_factor first
                         try:
+                            if debug_mode:
+                                self.logger.debug(f"Attempting to create PowerPortTemplate with power_factor: {filtered_data}")
                             component_model.objects.create(**filtered_data)
+                            if debug_mode:
+                                self.logger.debug("PowerPortTemplate created successfully with power_factor")
                         except TypeError as e:
+                            if debug_mode:
+                                self.logger.debug(f"TypeError caught: {e}")
                             if "unexpected keyword argument" in str(e) and "power_factor" in str(e):
                                 # Remove power_factor and create without it, then update via raw SQL
                                 power_factor_value = filtered_data.pop('power_factor')
+                                if debug_mode:
+                                    self.logger.debug(f"Creating PowerPortTemplate without power_factor, will update via SQL: {power_factor_value}")
                                 obj = component_model.objects.create(**filtered_data)
                                 # Update power_factor via raw SQL
                                 from django.db import connection
@@ -240,6 +248,8 @@ class SyncModuleTypes(Job):
                                         "UPDATE dcim_powerporttemplate SET power_factor = %s WHERE id = %s",
                                         [power_factor_value, obj.id]
                                     )
+                                if debug_mode:
+                                    self.logger.debug(f"Updated power_factor via SQL: {power_factor_value} for object {obj.id}")
                             else:
                                 raise
                     else:
