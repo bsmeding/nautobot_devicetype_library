@@ -209,8 +209,9 @@ class SyncModuleTypes(Job):
                     if field not in valid_data or valid_data[field] is None:
                         valid_data[field] = default_value
                 valid_data[fk_field] = module_type
-                # Filter out any fields that are not in the fields list to avoid keyword argument errors
-                filtered_data = {k: v for k, v in valid_data.items() if k in fields + [fk_field]}
+                # Filter out any fields that are not in the fields list or defaults to avoid keyword argument errors
+                allowed_fields = fields + [fk_field] + list(defaults.keys())
+                filtered_data = {k: v for k, v in valid_data.items() if k in allowed_fields}
                 component_model.objects.create(**filtered_data)
             self.logger.info(f"Processed {component_list} for {module_data['model']}.")
 
