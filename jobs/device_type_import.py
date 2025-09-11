@@ -183,20 +183,12 @@ class SyncDeviceTypes(Job):
                         for field, default_value in defaults.items():
                             if field not in valid_data or valid_data[field] is None:
                                 valid_data[field] = default_value
-                                if debug_mode and component_model == PowerPortTemplate:
-                                    self.logger.debug(f"Applied default for {field}: {default_value}")
                         if parent_value:
                             valid_data[parent_field] = parent_value
                         valid_data[fk_field] = device_type
                         # Filter out any fields that are not in the fields list or defaults to avoid keyword argument errors
                         allowed_fields = fields + [fk_field] + list(defaults.keys())
                         filtered_data = {k: v for k, v in valid_data.items() if k in allowed_fields}
-                        
-                        if debug_mode and component_model == PowerPortTemplate:
-                            self.logger.debug(f"PowerPortTemplate - valid_data keys: {list(valid_data.keys())}")
-                            self.logger.debug(f"PowerPortTemplate - allowed_fields: {allowed_fields}")
-                            self.logger.debug(f"PowerPortTemplate - filtered_data keys: {list(filtered_data.keys())}")
-                            self.logger.debug(f"PowerPortTemplate - defaults: {defaults}")
                         
                         # Create the component object
                         component_model.objects.create(**filtered_data)
