@@ -213,8 +213,16 @@ class SyncModuleTypes(Job):
                 allowed_fields = fields + [fk_field] + list(defaults.keys())
                 filtered_data = {k: v for k, v in valid_data.items() if k in allowed_fields}
                 
+                if debug_mode and component_model == PowerPortTemplate:
+                    self.logger.debug(f"PowerPortTemplate - valid_data keys: {list(valid_data.keys())}")
+                    self.logger.debug(f"PowerPortTemplate - allowed_fields: {allowed_fields}")
+                    self.logger.debug(f"PowerPortTemplate - filtered_data keys: {list(filtered_data.keys())}")
+                
                 # Special handling for PowerPortTemplate with power_factor
                 if component_model == PowerPortTemplate:
+                    if debug_mode:
+                        self.logger.debug(f"Processing PowerPortTemplate, filtered_data keys: {list(filtered_data.keys())}")
+                        self.logger.debug(f"power_factor in filtered_data: {'power_factor' in filtered_data}")
                     if 'power_factor' in filtered_data:
                         # Try to create with power_factor first
                         try:
