@@ -12,7 +12,7 @@ import re
 import yaml
 import shutil
 from nautobot.dcim.models import (
-    Manufacturer, ModuleType, ConsolePortTemplate, ConsoleServerPortTemplate,
+    Manufacturer, ModuleType, InterfaceTemplate, ConsolePortTemplate, ConsoleServerPortTemplate,
     PowerPortTemplate, PowerOutletTemplate, FrontPortTemplate, RearPortTemplate
 )
 from nautobot.extras.models import ImageAttachment
@@ -161,6 +161,9 @@ class SyncModuleTypes(Job):
                     module_type = self._create_or_update_module_type(module_data, folder_name)
                     self.logger.info(f"ModuleType created: {module_type.id} - {module_type.manufacturer.name} {module_type.model}")
 
+                    # Process module components (interfaces, ports, etc.)
+                    self._process_module_components(module_type, module_data)
+
                     # Attach images if requested
                     if include_images:
                         try:
@@ -206,6 +209,27 @@ class SyncModuleTypes(Job):
             module_type.save()
 
         return module_type
+
+    def _process_module_components(self, module_type, module_data):
+        """Process module components like interfaces, ports, etc."""
+        def process_component(component_list, component_model, fields, fk_field="module_type"):
+            """Generic function to process different module components"""
+            filter_kwargs = {fk_field: module_type}
+            component_model.objects.filter(**filter_kwargs).delete()
+            for item in module_data.get(component_list, []):
+                valid_data = {field: item.get(field, None) for field in fields if field in item}
+                valid_data[fk_field] = module_type
+                component_model.objects.create(**valid_data)
+            self.logger.info(f"Processed {component_list} for {module_data['model']}.")
+
+        # Define valid fields for each model with the correct foreign key
+        process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
+        process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
+        process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
+        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"])
+        process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
+        process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
+        process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
 
     def _slugify(self, value):
         """Convert a string to a URL-friendly slug."""
