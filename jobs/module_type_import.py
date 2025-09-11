@@ -8,8 +8,8 @@
 
 from nautobot.core.jobs import Job, StringVar, ChoiceVar, BooleanVar, register_jobs
 import os
-import yaml
 import re
+import yaml
 import shutil
 from nautobot.dcim.models import (
     Manufacturer, ModuleType, ConsolePortTemplate, ConsoleServerPortTemplate,
@@ -17,9 +17,9 @@ from nautobot.dcim.models import (
 )
 from nautobot.extras.models import ImageAttachment
 from django.core.files.base import File
+from django.db import transaction
 from django.core.files.images import ImageFile
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
 from django.conf import settings
 
 # Set the relative path to the module types folder
@@ -113,10 +113,16 @@ class SyncModuleTypes(Job):
                 self.logger.info(f"Checking folder: {root}")
             for file in files:
                 if file.endswith('.yaml') or file.endswith('.yml'):
-                    file_path = os.path.join(root, file)
-                    files_to_import.append(file_path)
+                    full_path = os.path.join(root, file)
+                    if manufacturer and manufacturer not in root:
+                        continue  # Skip files not belonging to the selected manufacturer
+                    if text_filter:
+                        regex_pattern = re.compile(text_filter)
+                        if not regex_pattern.search(file):
+                            continue  # Skip files that do not match the regex filter
+                    files_to_import.append(full_path)
                     if debug_mode:
-                        self.logger.info(f"Found YAML file: {file_path}")
+                        self.logger.info(f"Found YAML file: {full_path}")
 
         if not files_to_import:
             self.logger.warning("No YAML files found in the module types directory.")
@@ -132,49 +138,43 @@ class SyncModuleTypes(Job):
                 folder_name = os.path.basename(os.path.dirname(file_path))
                 
                 with open(file_path, 'r') as f:
-                    data = yaml.safe_load(f)
+                    module_data = yaml.safe_load(f)
                 
-                if not isinstance(data, list):
-                    self.logger.error(f"YAML file {file_path} does not contain a list of module types.")
+                if not isinstance(module_data, dict):
+                    self.logger.error(f"YAML file {file_path} does not contain valid module type data.")
                     continue
 
-                for module_data in data:
-                    if not isinstance(module_data, dict):
-                        self.logger.error(f"Invalid module type data in {file_path}: {module_data}")
+                # Apply filters
+                if manufacturer and folder_name.lower() != manufacturer.lower():
+                    continue
+                
+                if text_filter:
+                    if not re.search(text_filter, module_data.get("model", ""), re.IGNORECASE):
                         continue
 
-                    # Apply filters
-                    if manufacturer and folder_name.lower() != manufacturer.lower():
-                        continue
-                    
-                    if text_filter:
-                        import re
-                        if not re.search(text_filter, module_data.get("model", ""), re.IGNORECASE):
-                            continue
+                if dry_run:
+                    self.logger.info(f"[Dry-run] Would import module type: {folder_name} {module_data.get('model', 'Unknown')}")
+                    continue
 
-                    if dry_run:
-                        self.logger.info(f"[Dry-run] Would import module type: {folder_name} {module_data.get('model', 'Unknown')}")
-                        continue
+                # Create or update the module type using folder name as manufacturer
+                try:
+                    module_type = self._create_or_update_module_type(module_data, folder_name)
+                    self.logger.info(f"ModuleType created: {module_type.id} - {module_type.manufacturer.name} {module_type.model}")
 
-                    # Create or update the module type using folder name as manufacturer
-                    try:
-                        module_type = self._create_or_update_module_type(module_data, folder_name)
-                        self.logger.info(f"ModuleType created: {module_type.id} - {module_type.manufacturer.name} {module_type.model}")
+                    # Attach images if requested
+                    if include_images:
+                        try:
+                            # Try using part_number first, then fall back to model
+                            model_for_images = module_data.get("part_number", module_data["model"])
+                            # Wrap image attachment in a transaction to ensure it's committed
+                            with transaction.atomic():
+                                self._attach_module_images(module_type, folder_name, model_for_images, commit=True, debug_mode=debug_mode)
+                        except Exception as img_err:
+                            self.logger.warning(f"Images not attached for {folder_name} {module_data['model']}: {img_err}")
 
-                        # Attach images if requested
-                        if include_images:
-                            try:
-                                # Try using part_number first, then fall back to model
-                                model_for_images = module_data.get("part_number", module_data["model"])
-                                # Wrap image attachment in a transaction to ensure it's committed
-                                with transaction.atomic():
-                                    self._attach_module_images(module_type, folder_name, model_for_images, commit=True, debug_mode=debug_mode)
-                            except Exception as img_err:
-                                self.logger.warning(f"Images not attached for {folder_name} {module_data['model']}: {img_err}")
-
-                    except Exception as e:
-                        self.logger.error(f"Failed to create/update module type {folder_name} {module_data.get('model', 'Unknown')}: {e}")
-                        continue
+                except Exception as e:
+                    self.logger.error(f"Failed to create/update module type {folder_name} {module_data.get('model', 'Unknown')}: {e}")
+                    continue
 
             except Exception as e:
                 self.logger.error(f"Failed to process file {file_path}: {e}")
