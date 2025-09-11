@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Naviga
 MODULE_TYPE_PATH = os.path.join(BASE_DIR, "module-types")
 MODULE_IMAGE_PATH = os.path.join(BASE_DIR, "module-images")
 
-
+name = "Import Device or Module Types"
 class SyncModuleTypes(Job):
     text_filter = StringVar(
         description="Enter text to filter module types (regex supported)",

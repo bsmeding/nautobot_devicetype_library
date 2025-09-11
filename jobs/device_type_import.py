@@ -28,6 +28,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # Naviga
 DEVICE_TYPE_PATH = os.path.join(BASE_DIR, "device-types")
 ELEVATION_IMAGE_PATH = os.path.join(BASE_DIR, "elevation-images")
 
+name = "Import Device or Module Types"
 class SyncDeviceTypes(Job):
     text_filter = StringVar(
         description="Enter text to filter device types (regex supported)",
