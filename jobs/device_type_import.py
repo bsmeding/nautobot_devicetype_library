@@ -171,12 +171,18 @@ class SyncDeviceTypes(Job):
                         self.logger.warning(f"Images not attached for {device_data['manufacturer']} {device_data['model']}: {img_err}")
 
                 # Helper function to process components safely
-                def process_component(component_list, component_model, fields, fk_field="device_type", parent_field="device_type_id", parent_value=None):
+                def process_component(component_list, component_model, fields, fk_field="device_type", parent_field="device_type_id", parent_value=None, defaults=None):
                     """Generic function to process different device components"""
+                    if defaults is None:
+                        defaults = {}
                     filter_kwargs = {fk_field: device_type}
                     component_model.objects.filter(**filter_kwargs).delete()
                     for item in device_data.get(component_list, []):
                         valid_data = {field: item.get(field, None) for field in fields if field in item}
+                        # Apply defaults for missing fields
+                        for field, default_value in defaults.items():
+                            if field not in valid_data or valid_data[field] is None:
+                                valid_data[field] = default_value
                         if parent_value:
                             valid_data[parent_field] = parent_value
                         valid_data[fk_field] = device_type

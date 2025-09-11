@@ -13,7 +13,7 @@ import yaml
 import shutil
 from nautobot.dcim.models import (
     Manufacturer, ModuleType, InterfaceTemplate, ConsolePortTemplate, ConsoleServerPortTemplate,
-    PowerPortTemplate, PowerOutletTemplate, FrontPortTemplate, RearPortTemplate, ModuleBay
+    PowerPortTemplate, PowerOutletTemplate, FrontPortTemplate, RearPortTemplate
 )
 from nautobot.extras.models import ImageAttachment
 from django.core.files.base import File
@@ -209,7 +209,9 @@ class SyncModuleTypes(Job):
                     if field not in valid_data or valid_data[field] is None:
                         valid_data[field] = default_value
                 valid_data[fk_field] = module_type
-                component_model.objects.create(**valid_data)
+                # Filter out any fields that are not in the fields list to avoid keyword argument errors
+                filtered_data = {k: v for k, v in valid_data.items() if k in fields + [fk_field]}
+                component_model.objects.create(**filtered_data)
             self.logger.info(f"Processed {component_list} for {module_data['model']}.")
 
         # Define valid fields for each model with the correct foreign key
@@ -220,7 +222,6 @@ class SyncModuleTypes(Job):
         process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
         process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
         process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
-        process_component("module-bays", ModuleBay, ["name", "position", "label", "description"])
 
     def _slugify(self, value):
         """Convert a string to a URL-friendly slug."""
