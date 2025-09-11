@@ -117,7 +117,7 @@ class SyncModuleTypes(Job):
                     if manufacturer and manufacturer not in root:
                         continue  # Skip files not belonging to the selected manufacturer
                     if text_filter:
-                        regex_pattern = re.compile(text_filter)
+                        regex_pattern = re.compile(text_filter, re.IGNORECASE)
                         if not regex_pattern.search(file):
                             continue  # Skip files that do not match the regex filter
                     files_to_import.append(full_path)
@@ -212,12 +212,18 @@ class SyncModuleTypes(Job):
 
     def _process_module_components(self, module_type, module_data):
         """Process module components like interfaces, ports, etc."""
-        def process_component(component_list, component_model, fields, fk_field="module_type"):
+        def process_component(component_list, component_model, fields, fk_field="module_type", defaults=None):
             """Generic function to process different module components"""
+            if defaults is None:
+                defaults = {}
             filter_kwargs = {fk_field: module_type}
             component_model.objects.filter(**filter_kwargs).delete()
             for item in module_data.get(component_list, []):
                 valid_data = {field: item.get(field, None) for field in fields if field in item}
+                # Apply defaults for missing fields
+                for field, default_value in defaults.items():
+                    if field not in valid_data or valid_data[field] is None:
+                        valid_data[field] = default_value
                 valid_data[fk_field] = module_type
                 component_model.objects.create(**valid_data)
             self.logger.info(f"Processed {component_list} for {module_data['model']}.")
@@ -226,7 +232,7 @@ class SyncModuleTypes(Job):
         process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
         process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
         process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
-        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"])
+        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw", "power_factor"], defaults={"power_factor": 1.0})
         process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
         process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
         process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
