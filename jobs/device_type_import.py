@@ -186,7 +186,28 @@ class SyncDeviceTypes(Job):
                         if parent_value:
                             valid_data[parent_field] = parent_value
                         valid_data[fk_field] = device_type
-                        component_model.objects.create(**valid_data)
+                        
+                        # Special handling for PowerPortTemplate with power_factor
+                        if component_model == PowerPortTemplate and 'power_factor' in valid_data:
+                            # Try to create with power_factor first
+                            try:
+                                component_model.objects.create(**valid_data)
+                            except TypeError as e:
+                                if "unexpected keyword argument" in str(e) and "power_factor" in str(e):
+                                    # Remove power_factor and create without it, then update via raw SQL
+                                    power_factor_value = valid_data.pop('power_factor')
+                                    obj = component_model.objects.create(**valid_data)
+                                    # Update power_factor via raw SQL
+                                    from django.db import connection
+                                    with connection.cursor() as cursor:
+                                        cursor.execute(
+                                            "UPDATE dcim_powerporttemplate SET power_factor = %s WHERE id = %s",
+                                            [power_factor_value, obj.id]
+                                        )
+                                else:
+                                    raise
+                        else:
+                            component_model.objects.create(**valid_data)
                     self.logger.info(f"Checked {component_list} for {device_data['model']}.")
 
 
@@ -194,7 +215,7 @@ class SyncDeviceTypes(Job):
                 process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
                 process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
                 process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
-                process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"])
+                process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"], defaults={"power_factor": 1.0})
                 process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
                 process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
                 process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
