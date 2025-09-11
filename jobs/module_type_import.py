@@ -232,7 +232,7 @@ class SyncModuleTypes(Job):
         process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
         process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
         process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
-        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw", "power_factor"], defaults={"power_factor": 1.0})
+        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"])
         process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
         process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
         process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
@@ -511,6 +511,19 @@ class SyncModuleTypes(Job):
                         break
             if front_path and rear_path:
                 break
+
+        # Fallback: if no front/rear specific images found, try to match files without .front/.rear suffix
+        if not front_path and not rear_path:
+            for stem in candidate_stems:
+                for ext in extensions:
+                    key = f"{stem}.{ext}"
+                    if key in filename_to_path:
+                        front_path = filename_to_path[key]  # Treat as front image
+                        if debug_mode and hasattr(self, 'logger'):
+                            self.logger.debug(f"Using fallback front image: {key}")
+                        break
+                if front_path:
+                    break
 
         if debug_mode and hasattr(self, 'logger'):
             self.logger.debug(f"Final result: front={front_path}, rear={rear_path}")
