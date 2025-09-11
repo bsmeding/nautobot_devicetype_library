@@ -212,6 +212,7 @@ class SyncModuleTypes(Job):
                 # Filter out any fields that are not in the fields list or defaults to avoid keyword argument errors
                 allowed_fields = fields + [fk_field] + list(defaults.keys())
                 filtered_data = {k: v for k, v in valid_data.items() if k in allowed_fields}
+                
                 component_model.objects.create(**filtered_data)
             self.logger.info(f"Processed {component_list} for {module_data['model']}.")
 
@@ -219,7 +220,7 @@ class SyncModuleTypes(Job):
         process_component("interfaces", InterfaceTemplate, ["name", "type", "label", "description", "mgmt_only"])
         process_component("console-ports", ConsolePortTemplate, ["name", "type", "label", "description"])
         process_component("console-server-ports", ConsoleServerPortTemplate, ["name", "type", "label", "description"])
-        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"], defaults={"power_factor": 1.0})
+        process_component("power-ports", PowerPortTemplate, ["name", "type", "maximum_draw", "allocated_draw"])
         process_component("power-outlets", PowerOutletTemplate, ["name", "type", "power_port", "feed_leg", "label", "description"])
         process_component("front-ports", FrontPortTemplate, ["name", "type", "rear_port", "rear_port_position", "label", "description"])
         process_component("rear-ports", RearPortTemplate, ["name", "type", "positions", "label", "description"])
