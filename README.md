@@ -1,168 +1,178 @@
 # Nautobot Device Type Library
 
-## About this Library
+[![GitHub](https://img.shields.io/github/license/bsmeding/nautobot_devicetype_library)](https://github.com/bsmeding/nautobot_devicetype_library/blob/main/LICENSE)
+[![Device Types](https://img.shields.io/badge/device%20types-4,410-blue)](https://github.com/bsmeding/nautobot_devicetype_library)
+[![Manufacturers](https://img.shields.io/badge/manufacturers-224-green)](https://github.com/bsmeding/nautobot_devicetype_library)
 
-This library is intended to be used for populating device types in [Nautobot](https://github.com/nautobot/nautobot). It contains a set of device type definitions expressed in YAML and arranged by manufacturer. Each file represents a discrete physical device type (e.g. make and model). These definitions can be loaded into Nautobot instead of creating new device type definitions manually.
+A comprehensive library of device type definitions for [Nautobot](https://github.com/nautobot/nautobot), featuring **4,410 device types** from **224 manufacturers**. This library includes a built-in Nautobot job for easy synchronization without manual copy-pasting.
 
-If you would like to contribute to this library, please read through our [contributing guide](CONTRIBUTING.md) before submitting content.
+## Why automate device-type import?
 
-## Device Type Definitions
+Manually creating device-types in Nautobot is tedious and error-prone, especially for complex devices with many interfaces, modules, and console ports. By using a job that reads device-type YAML files (such as those from the nautobot-device-type-library), you can:
 
-Each definition **must** include at minimum the following fields:
+* **Save time:** Import dozens or hundreds of device-types in seconds.
+* **Reduce errors:** YAML files are version-controlled and community-maintained.
+* **Stay up-to-date:** Easily sync new or updated device-types as vendors release new hardware.
 
-- `manufacturer`: The name of the manufacturer which produces this device type.
-  - Type: String
-- `model`: The model number of the device type. This must be unique per manufacturer.
-  - Type: String
+## How it works
 
->:test_tube: **Valid Example**:
->
->```yaml
->manufacturer: Cisco
->model: C9200L-48P-4G
->```
+The included Nautobot Job (`SyncDeviceTypes`) scans the device-type YAML files in the repository. You can filter by manufacturer (vendor) and/or a text search (supports regex) to only import the device-types you need.
 
-The following fields may **optionally** be declared:
+* **Dry-run mode:** See what would be imported/updated before making changes.
+* **Commit mode:** Actually create or update device-types in your Nautobot instance.
 
-- `part_number`: An alternative representation of the model number (e.g. a SKU). (**Default: None**)
-  - Type: String
+The job will:
+1. List all available manufacturers (vendors) based on the folder structure.
+2. Allow you to filter device-types by name or regex.
+3. Import the selected device-types, including interfaces, console ports, and module bays.
 
-> :test_tube: **Example**: `part_number: C9200L-48P-4G`
+## Example: Importing Cisco Catalyst 9300
 
-- `u_height`: The height of the device type in rack units. (**Default: 1**)
-  - Type: number (minimum of `0`, multiple of `1`)
+Suppose you want to import only Cisco Catalyst 9300 device-types:
 
-> :test_tube: **Example**: `u_height: 12`
+1. In the job form, select manufacturer: `cisco`
+2. In the filter field, enter: `9300`
+3. Run in dry-run mode to preview.
+4. If the results look good, run again with commit enabled.
 
-- `is_full_depth`: A boolean which indicates whether the device type consumes both the front and rear rack faces. (**Default: true**)
-  - Type: Boolean
+## How to Get Started
 
-> :test_tube: **Example**: `is_full_depth: false`
+### 1. Add the Git Repository
 
-- `front_image`: Indicates that this device has a front elevation image within the [elevation-images](elevation-images/) folder. (**Default: None**)
-  - NOTE: The elevation images folder requires the same folder name as this device. The file name must also adhere to `<model>.front.<extension>`. The extension must be a valid image extension and the image file must be a valid image. Some examples are `bmp`, `gif`, `jpeg`, `png`, `tiff`.
-  - Type: Boolean
+* Go to **Extensibility** → **Git repositories** in Nautobot.
+* Click **Add** and enter the repo URL:  
+`https://github.com/bsmeding/nautobot_devicetype_library.git`
+* Click **Dry-Run + Sync** to pull the device-types.
 
-> :test_tube: **Example**: `front_image: True`
+![Add Git Repository](docs/images/add-git-repo.png)
+*Adding the device-type library as a Git repository in Nautobot.*
 
-- `rear_image`: Indicates that this device has a rear elevation image within the [elevation-images](elevation-images/) folder. (**Default: None**)
-  - NOTE: The elevation images folder requires the same folder name as this device. The file name must also adhere to `<model>.rear.<extension>`. The extension must be a valid image extension and the image file must be a valid image. Some examples are `bmp`, `gif`, `jpeg`, `png`, `tiff`.
-  - Type: Boolean
+### 2. Enable Job
 
-> :test_tube: **Example**: `rear_image: True`
+* Go to **Jobs** → **Jobs** in Nautobot.
+* Find **Sync device types** Job and click Edit
+* Find **Enabled** and select this Enable
 
-- `subdevice_role`: Indicates that this is a `parent` or `child` device. (**Default: None**)
-  - Type: String
-  - Options:
-    - `parent`
-    - `child`
+### 3. Launch the Job
 
-> :test_tube: **Example**: `subdevice_role: parent`
+* Navigate to **Jobs** in Nautobot.
+* Find and select the `Sync Device Types` job.
+* (Optional) Enter a search filter or select a manufacturer.
+* Run in **dry-run** mode first to preview changes.
+* Start Dry-Run
+* Results Dry-Run
+* If satisfied, run again with **commit** enabled to import device-types.
 
-- `comments`: A string field which allows for comments to be added to the device. (**Default: None**)
-  - Type: String
+![Job Form Example](docs/images/run-nautobot-device-type-sync-job.png)
+*Example: Selecting manufacturer and filter in the job form.*
 
-> :test_tube: **Example**: `comments: This is a comment that will appear on newly created Nautobot devices of this type`
+![Running the Job](docs/images/run.png)
+*Running the Sync Device Types job with filter and manufacturer selection.*
 
-For further detail on these attributes and those listed below, please reference the
-[schema definitions](schema/) and the [Component Definitions](#component-definitions) below.
+> **Tip:** Please DO filter otherwise ALL devices will be added
+
+### 4. Verify Imported Device Types
+
+* Go to **Devices** → **Device Types** to see the imported device-types.
+* You can now use these when creating new devices in Nautobot.
+
+![Device Types Imported](docs/images/imported_device_example.png)
+*Imported device-types now available in Nautobot.*
+
+## Library Statistics
+
+- **Device Types**: 4,410 YAML files
+- **Manufacturers**: 224 vendors
+- **Coverage**: Major networking vendors including Cisco, Juniper, Arista, HP/HPE, Dell, Fortinet, and many specialized manufacturers
+
+## Customizing or Extending
+
+You can fork the repository and add your own device-type YAML files, or contribute improvements upstream. The job will automatically pick up any new files you add to the `device-types/<manufacturer>/` folders.
+
+## Troubleshooting
+
+* **Device-types not appearing?**  
+ Double-check your filter and manufacturer selection. Try running with no filter to see all available device-types.
+* **Errors on import?**  
+ Check the Nautobot job logs for details. Invalid YAML or missing required fields can cause failures.
+* **Need more device-types?**  
+ Contribute to the [nautobot-device-type-library](https://github.com/bsmeding/nautobot_devicetype_library) or add your own YAML files.
+
+## Security & Best Practices
+
+* Always review device-type definitions before importing, especially from third-party sources.
+* Use dry-run mode to preview changes.
+* Keep your device-type library up-to-date for new hardware and bugfixes.
+
+## Device Type YAML Format
+
+Each device type definition **must** include at minimum:
+
+```yaml
+manufacturer: Cisco
+model: C9200L-48P-4G
+```
+
+### Optional Fields
+
+- `part_number`: Alternative representation of the model number (e.g. SKU)
+- `u_height`: Height in rack units (default: 1)
+- `is_full_depth`: Whether device consumes both front and rear rack faces (default: true)
+- `front_image` / `rear_image`: Indicates presence of elevation images
+- `subdevice_role`: `parent` or `child` device
+- `comments`: Additional comments for the device
 
 ### Component Definitions
 
-Valid component types are listed below. Each type of component must declare a list of the individual component templates to be added.
+Supported component types:
+- `console-ports`: Physical console connectivity
+- `console-server-ports`: Remote console access
+- `power-ports`: Power supply connections
+- `power-outlets`: PDU outlets
+- `interfaces`: Network interfaces
+- `front-ports` / `rear-ports`: Pass-through connections
+- `device-bays`: Slots for child devices
 
-- [`console-ports`](#console-ports-documentation)
-- [`console-server-ports`](#console-server-ports-documentation)
-- [`power-ports`](#power-ports-documentation)
-- [`power-outlets`](#power-outlets-documentation)
-- [`interfaces`](#interfaces-documentation)
-- [`front-ports`](#front-ports-documentation)
-- [`rear-ports`](#rear-ports-documentation)
-- [`device-bays`](#device-bays-documentation)
+For detailed component documentation, see the [Nautobot documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/).
 
-The available fields for each type of component are listed below.
+## How to Contribute a New Device Type
 
-#### Console Ports ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/consoleport/))
+Did you notice a device type missing from the library? You can help improve the ecosystem!
 
-A console port provides connectivity to the physical console of a device. These are typically used for temporary access by someone who is physically near the device, or for remote out-of-band access provided via a networked console server.
+1. **Fork the Repository**  
+ Go to [nautobot_devicetype_library](https://github.com/bsmeding/nautobot_devicetype_library) on GitHub and click **Fork**.
 
-- `name`: Name
-- `label`: Label (optional)
-- `description`: Description (optional)
-- `type`: ConsolePort type choice (optional)
+2. **Add Your Device Type YAML**
+3. Clone your fork locally.
+4. Add your device type YAML file in the correct manufacturer folder under `device-types/`.
+5. Follow the device-type YAML format guidelines.
 
-#### Console Server Ports ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/consoleserverport/))
+6. **Commit and Push**
+7. Commit your changes with a clear message, e.g.  
+`Add device type: Cisco Catalyst 9500-24Y4C`
+8. Push to your fork.
 
-A console server is a device which provides remote access to the local consoles of connected devices. They are typically used to provide remote out-of-band access to network devices, and generally connect to console ports.
+9. **Open a Pull Request**
+10. Go to your fork on GitHub.
+11. Click **Compare & pull request**.
+12. Describe your addition and submit the PR.
 
-- `name`: Name
-- `label`: Label (optional)
-- `description`: Description (optional)
-- `type`: ConsolePort type choice (optional)
+Your contribution will be reviewed and, once approved, merged into the main library for everyone to use!
 
-#### Power Ports ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/powerport/))
+> **Tip:** If you're unsure about the YAML format, check out existing device types or open an issue for help.
 
-A power port is a device component which draws power from some external source (e.g. an upstream power outlet), and generally represents a power supply internal to a device.
+## Resources
 
-- `name`: Name
-- `label`: Label (optional)
-- `description`: Description (optional)
-- `type`: PowerPort type choice (optional)
-- `maximum_draw`: The port's maximum power draw, in watts (optional)
-- `allocated_draw`: The port's allocated power draw, in watts (optional)
+* [nautobot-device-type-library on GitHub](https://github.com/bsmeding/nautobot_devicetype_library) (source of my fork, what is forked from Netbox device_type library)
+* [Nautobot documentation: Device Types](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/devicetype/)
+* [How to write device-type YAML files](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/devicetype/)
 
-#### Power Outlets ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/poweroutlet/))
+## License
 
-Power outlets represent the outlets on a power distribution unit (PDU) or other device that supplies power to dependent devices. Each power port may be assigned a physical type, and may be associated with a specific feed leg (where three-phase power is used) and/or a specific upstream power port. This association can be used to model the distribution of power within a device.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
-- `name`: Name
-- `label`: Label (optional)
-- `description`: Description (optional)
-- `type`: PortOutlet type choice (optional)
-- `power_port`: The name of the power port on the device which powers this outlet (optional)
-- `feed_leg`: The phase (leg) of power to which this outlet is mapped; A, B, or C (optional)
+---
 
-#### Interfaces ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/interface/))
+**Made with ❤️ for the Nautobot community**
 
-Interfaces in Nautobot represent network interfaces used to exchange data with connected devices. On modern networks, these are most commonly Ethernet, but other types are supported as well. IP addresses and VLANs can be assigned to interfaces.
-
-- `name`: Name
-- `type`: Interface type choice
-- `label`: Label (optional)
-- `description`: Description (optional)
-- `mgmt_only`: A boolean which indicates whether this interface is used for management purposes only (default: false)
-
-#### Front Ports ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/frontport/))
-
-Front ports are pass-through ports which represent physical cable connections that comprise part of a longer path. For example, the ports on the front face of a UTP patch panel would be modeled in Nautobot as front ports. Each port is assigned a physical type, and must be mapped to a specific rear port on the same device. A single rear port may be mapped to multiple front ports, using numeric positions to annotate the specific alignment of each.
-
-- `name`: Name
-- `type`: Port type choice
-- `rear_port`: The name of the rear port on this device to which the front port maps
-- `rear_port_position`: The corresponding position on the mapped rear port (default: 1)
-- `label`: Label (optional)
-- `description`: Description (optional)
-
-#### Rear Ports ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/rearport/))
-
-Like front ports, rear ports are pass-through ports which represent the continuation of a path from one cable to the next. Each rear port is defined with its physical type and a number of positions: Rear ports with more than one position can be mapped to multiple front ports. This can be useful for modeling instances where multiple paths share a common cable (for example, six discrete two-strand fiber connections sharing a 12-strand MPO cable).
-
-- `name`: Name
-- `type`: Port type choice
-- `label`: Label (optional)
-- `description`: Description (optional)
-- `positions`: The number of front ports that can map to this rear port (default: 1)
-
-#### Device Bays ([Documentation](https://docs.nautobot.com/projects/core/en/stable/user-guide/core-data-model/dcim/devicebay/))
-
-Device bays represent a space or slot within a parent device in which a child device may be installed. For example, a 2U parent chassis might house four individual blade servers. The chassis would appear in the rack elevation as a 2U device with four device bays, and each server within it would be defined as a 0U device installed in one of the device bays. Child devices do not appear within rack elevations or count as consuming rack units.
-
-Child devices are first-class Devices in their own right: That is, they are fully independent managed entities which don't share any control plane with the parent. Just like normal devices, child devices have their own platform (OS), role, tags, and components. LAG interfaces may not group interfaces belonging to different child devices.
-
-- `name`: Name
-- `label`: Label (optional)
-- `description`: Description (optional)
-
-## Repository Forked from NetBox Community Device Type Library
-
-This repository started as a fork of the [NetBox Device Type Library](https://github.com/netbox-community/devicetype-library/).
+For more NetDevOps content, visit [netdevops.it](https://netdevops.it)
