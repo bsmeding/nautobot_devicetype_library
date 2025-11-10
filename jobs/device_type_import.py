@@ -58,6 +58,8 @@ class SyncDeviceTypes(Job):
         name = "Sync Device Types"
         description = "Import device types from the local Nautobot Git repository with dry-run and debug options."
         job_class_name = "SyncDeviceTypes"
+        soft_time_limit = 900  # 15 minutes in seconds
+        time_limit = 960  # 16 minutes in seconds
 
     def run(self, *args, **kwargs):
         """Execute the job with dynamic argument handling."""

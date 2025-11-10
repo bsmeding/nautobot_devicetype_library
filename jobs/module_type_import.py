@@ -52,6 +52,8 @@ class SyncModuleTypes(Job):
         name = "Sync Module Types"
         description = "Sync module types from YAML files"
         commit_default = False
+        soft_time_limit = 900  # 15 minutes in seconds
+        time_limit = 960  # 16 minutes in seconds
 
     @classmethod
     def get_manufacturer_choices(cls):
