@@ -85,6 +85,45 @@ Suppose you want to import only Cisco Catalyst 9300 device-types:
 - **Manufacturers**: 224 vendors
 - **Coverage**: Major networking vendors including Cisco, Juniper, Arista, HP/HPE, Dell, Fortinet, and many specialized manufacturers
 
+## 🔄 NEW: Device Component Synchronization
+
+In addition to importing device types, this repository now includes a powerful **Device Component Sync** job that synchronizes existing devices with their device type definitions.
+
+### What it does
+
+- **Compare** devices against their device type templates
+- **Add** missing components (interfaces, ports, etc.) to devices
+- **Remove** extra components not defined in the device type
+- **Protect** connected and configured components from deletion
+- **Report** detailed changes and differences
+
+### Common use cases
+
+1. **Initial device provisioning**: Automatically add all interfaces when creating a new device
+2. **Device type updates**: Sync existing devices after updating a device type template
+3. **Cleanup**: Remove components that don't match the device type
+4. **Audit**: Compare devices against templates without making changes
+
+### Quick example
+
+```
+Job: Sync Device Components
+Device Type: Cisco Catalyst 9200L-48P-4G
+Sync Mode: Add missing components
+Component Types: Interfaces
+Result: All missing interfaces added to matching devices
+```
+
+### Features
+
+- ✅ **Safe by default**: Diff mode shows changes without applying them
+- ✅ **Smart protection**: Won't remove components with cables or configurations
+- ✅ **Bulk operations**: Process multiple devices efficiently
+- ✅ **Detailed reporting**: JSON export for audit and compliance
+- ✅ **Transaction safety**: Changes are rolled back on errors
+
+📖 **[Read the full Device Sync Guide](docs/DEVICE_SYNC_GUIDE.md)** for detailed usage instructions and examples.
+
 ## Customizing or Extending
 
 You can fork the repository and add your own device-type YAML files, or contribute improvements upstream. The job will automatically pick up any new files you add to the `device-types/<manufacturer>/` folders.
