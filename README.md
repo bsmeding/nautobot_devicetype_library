@@ -26,6 +26,8 @@ The job will:
 2. Allow you to filter device-types by name or regex.
 3. Import the selected device-types, including interfaces, console ports, and module bays.
 
+
+
 ## Example: Importing Cisco Catalyst 9300
 
 Suppose you want to import only Cisco Catalyst 9300 device-types:
@@ -95,6 +97,8 @@ You can fork the repository and add your own device-type YAML files, or contribu
  Double-check your filter and manufacturer selection. Try running with no filter to see all available device-types.
 * **Errors on import?**  
  Check the Nautobot job logs for details. Invalid YAML or missing required fields can cause failures.
+* **Job timing out or taking too long?**  
+ If you're importing a large number of device-types, the sync job may exceed the default Celery task time limit. You may need to increase `CELERY_TASK_SOFT_TIME_LIMIT` in your Nautobot configuration to allow the job to complete. This is especially important when importing hundreds or thousands of device-types at once.
 * **Need more device-types?**  
  Contribute to the [nautobot-device-type-library](https://github.com/bsmeding/nautobot_devicetype_library) or add your own YAML files.
 
